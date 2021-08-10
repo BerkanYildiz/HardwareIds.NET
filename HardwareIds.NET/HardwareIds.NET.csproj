@@ -12,7 +12,6 @@
     <RepositoryType>git</RepositoryType>
     <Description>Simple .NET library capable of tracking users across re-installs and hardware components swapping, and even entirely new computer using the neighborhood's network endpoints.</Description>
     <PackageTags>hwid, tracker, track, tracking, hardware, id, hardwareid, hardwareids, hwids, hardwares, identifier, identifiers, scan, network, query, serial, number, serialnumber</PackageTags>
-    <Version>1.0.2</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
