@@ -9,8 +9,8 @@
     <license type="expression">MIT</license>
     <projectUrl>https://github.com/BerkanYildiz/HardwareIds.NET</projectUrl>
     <description>Simple .NET library capable of tracking users across re-installs and hardware components swapping, and even entirely new computer using the neighborhood's network endpoints.</description>
-    <releaseNotes>Summary of changes made in this release of the package.</releaseNotes>
-    <copyright>Copyright © 2021</copyright>
+    <releaseNotes>Downgrade from .NET 5.0 to .NET Framework 4.8</releaseNotes>
+    <copyright>$copyright$</copyright>
     <tags>hwid, tracker, track, tracking, hardware, id, hardwareid, hardwareids, hwids, hardwares, identifier, identifiers, scan, network, query, serial, number, serialnumber</tags>
   </metadata>
 </package>
