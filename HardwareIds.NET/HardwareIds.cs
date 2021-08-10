@@ -38,8 +38,7 @@
         /// Gets the current hardware information of this (local) computer.
         /// </summary>
         /// <param name="InConfig">The configuration.</param>
-        [Obsolete]
-        public static async ValueTask<Hwid> GetHwidAsync(HardwareIdsConfig InConfig = null)
+        public static async Task<Hwid> GetHwidAsync(HardwareIdsConfig InConfig = null)
         {
             if (InConfig == null)
                 InConfig = new HardwareIdsConfig();
@@ -583,7 +582,6 @@
         /// Gets the current hardware information of this (local) computer.
         /// </summary>
         /// <param name="InConfig">The configuration.</param>
-        [Obsolete]
         public static Hwid GetHwid(HardwareIdsConfig InConfig = null)
         {
             return GetHwidAsync(InConfig).ConfigureAwait(false).GetAwaiter().GetResult();
