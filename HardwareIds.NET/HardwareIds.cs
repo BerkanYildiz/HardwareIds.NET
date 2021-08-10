@@ -221,12 +221,9 @@
                 {
                     Hwid.SmbiosTables.Add(new HwSmbios
                     {
-                            Version = $"{SmbiosTable.SmbiosMajorVersion}.{SmbiosTable.SmbiosMinorVersion}.{SmbiosTable.DmiRevision}",
-                            Hash = string.Join(string.Empty, sha256.ComputeHash(SmbiosTable.SmBiosData).Select(T => T.ToString("x2"))),
-
-                            Length = SmbiosTable.Size,
-                        });
-                    }
+                        Id = (int) Hwid.SmbiosTables.Count,
+                        Version = $"{SmbiosTable.SmbiosMajorVersion}.{SmbiosTable.SmbiosMinorVersion}.{SmbiosTable.DmiRevision}",
+                        Hash = string.Join(string.Empty, SHA256.HashData(SmbiosTable.SmBiosData).Select(T => T.ToString("x2"))),
                         Length = SmbiosTable.Size,
                     });
                 }
