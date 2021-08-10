@@ -38,7 +38,7 @@
         /// Gets the current hardware information of this (local) computer.
         /// </summary>
         /// <param name="InConfig">The configuration.</param>
-        public static async Task<Hwid> GetHwidAsync(HardwareIdsConfig InConfig = null)
+        public static async ValueTask<Hwid> GetHwidAsync(HardwareIdsConfig InConfig = null)
         {
             if (InConfig == null)
                 InConfig = new HardwareIdsConfig();
@@ -113,9 +113,9 @@
                         Address = { Current = NetworkAdapter.MacAddress, Permanent = NetworkAdapter.PermanentAddress },
                     };
 
-                    if (DeviceIoControl.Exists($@"\\.\{NetworkAdapter.Guid}"))
+                    if (DeviceIoControl.Exists(@$"\\.\{NetworkAdapter.Guid}"))
                     {
-                        var DeviceIo = new DeviceIoControl($@"\\.\{NetworkAdapter.Guid}");
+                        var DeviceIo = new DeviceIoControl(@$"\\.\{NetworkAdapter.Guid}");
 
                         { DeviceIo.Connect();
                             {
@@ -219,17 +219,16 @@
             {
                 foreach (var SmbiosTable in SmBiosRawSmBiosTables.Retrieve())
                 {
-                    using (SHA256 sha256 = SHA256.Create())
+                    Hwid.SmbiosTables.Add(new HwSmbios
                     {
-                        Hwid.SmbiosTables.Add(new HwSmbios
-                        {
-                            Id = (int)Hwid.SmbiosTables.Count,
                             Version = $"{SmbiosTable.SmbiosMajorVersion}.{SmbiosTable.SmbiosMinorVersion}.{SmbiosTable.DmiRevision}",
                             Hash = string.Join(string.Empty, sha256.ComputeHash(SmbiosTable.SmBiosData).Select(T => T.ToString("x2"))),
 
                             Length = SmbiosTable.Size,
                         });
                     }
+                        Length = SmbiosTable.Size,
+                    });
                 }
             }
             catch (Exception)
@@ -543,7 +542,7 @@
                             {
                                 var MacAddressLength = 6;
                                 var MacAddress = new byte[6];
-                                var DhcpAddress = string.Join(".", IpSections[0], IpSections[1], IpSections[2], DhcpIndex);
+                                var DhcpAddress = string.Join('.', IpSections[0], IpSections[1], IpSections[2], DhcpIndex);
                                 var IpAddress = IPAddress.Parse(DhcpAddress);
                                 var DhcpStatus = SendARP((uint) IpAddress.Address, 0, MacAddress, ref MacAddressLength);
 
