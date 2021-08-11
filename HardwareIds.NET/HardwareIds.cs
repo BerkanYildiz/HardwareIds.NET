@@ -113,9 +113,9 @@
                         Address = { Current = NetworkAdapter.MacAddress, Permanent = NetworkAdapter.PermanentAddress },
                     };
 
-                    if (DeviceIoControl.Exists(@$"\\.\{NetworkAdapter.Guid}"))
+                    if (DeviceIoControl.Exists($@"\\.\{NetworkAdapter.Guid}"))
                     {
-                        var DeviceIo = new DeviceIoControl(@$"\\.\{NetworkAdapter.Guid}");
+                        var DeviceIo = new DeviceIoControl($@"\\.\{NetworkAdapter.Guid}");
 
                         { DeviceIo.Connect();
                             {
@@ -219,13 +219,16 @@
             {
                 foreach (var SmbiosTable in SmBiosRawSmBiosTables.Retrieve())
                 {
-                    Hwid.SmbiosTables.Add(new HwSmbios
+                    using (var Hasher = new SHA256Managed())
                     {
-                        Id = (int) Hwid.SmbiosTables.Count,
-                        Version = $"{SmbiosTable.SmbiosMajorVersion}.{SmbiosTable.SmbiosMinorVersion}.{SmbiosTable.DmiRevision}",
-                        Hash = string.Join(string.Empty, SHA256.HashData(SmbiosTable.SmBiosData).Select(T => T.ToString("x2"))),
-                        Length = SmbiosTable.Size,
-                    });
+                        Hwid.SmbiosTables.Add(new HwSmbios
+                        {
+                            Id = (int) Hwid.SmbiosTables.Count,
+                            Version = $"{SmbiosTable.SmbiosMajorVersion}.{SmbiosTable.SmbiosMinorVersion}.{SmbiosTable.DmiRevision}",
+                            Hash = string.Join(string.Empty, Hasher.ComputeHash(SmbiosTable.SmBiosData).Select(T => T.ToString("x2"))),
+                            Length = SmbiosTable.Size,
+                        });
+                    }
                 }
             }
             catch (Exception)
@@ -539,7 +542,7 @@
                             {
                                 var MacAddressLength = 6;
                                 var MacAddress = new byte[6];
-                                var DhcpAddress = string.Join('.', IpSections[0], IpSections[1], IpSections[2], DhcpIndex);
+                                var DhcpAddress = string.Join(".", IpSections[0], IpSections[1], IpSections[2], DhcpIndex);
                                 var IpAddress = IPAddress.Parse(DhcpAddress);
                                 var DhcpStatus = SendARP((uint) IpAddress.Address, 0, MacAddress, ref MacAddressLength);
 
