@@ -12,7 +12,8 @@
     <RepositoryType>git</RepositoryType>
     <Description>Simple .NET library capable of tracking users across re-installs and hardware components swapping, and even entirely new computer using the neighborhood's network endpoints.</Description>
     <PackageTags>hwid, tracker, track, tracking, hardware, id, hardwareid, hardwareids, hwids, hardwares, identifier, identifiers, scan, network, query, serial, number, serialnumber</PackageTags>
-    <Version>1.1.1</Version>
+    <Version>1.1.2</Version>
+    <PackageReleaseNotes>Removed dependency on threading extensions</PackageReleaseNotes>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
@@ -26,11 +27,14 @@
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|netstandard2.0|AnyCPU'">
+    <DefineConstants>DEBUG;TRACE</DefineConstants>
+  </PropertyGroup>
+
   <ItemGroup>
     <PackageReference Include="Driver.NET" Version="2.2.2" />
     <PackageReference Include="ManagedNativeWifi" Version="2.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
-    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.4" />
     <PackageReference Include="WindowsMonitor.Standard" Version="4.2.0" />
   </ItemGroup>
 

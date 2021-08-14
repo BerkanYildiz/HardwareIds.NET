@@ -38,7 +38,7 @@
         /// Gets the current hardware information of this (local) computer.
         /// </summary>
         /// <param name="InConfig">The configuration.</param>
-        public static async ValueTask<Hwid> GetHwidAsync(HardwareIdsConfig InConfig = null)
+        public static async Task<Hwid> GetHwidAsync(HardwareIdsConfig InConfig = null)
         {
             if (InConfig == null)
                 InConfig = new HardwareIdsConfig();
