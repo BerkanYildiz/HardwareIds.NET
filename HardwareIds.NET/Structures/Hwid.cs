@@ -71,7 +71,7 @@
         {
             get
             {
-                return this.Baseboards.FirstOrDefault();
+                return this.Baseboards?.FirstOrDefault();
             }
         }
 
@@ -93,7 +93,7 @@
         {
             get
             {
-                return this.Motherboards.FirstOrDefault();
+                return this.Motherboards?.FirstOrDefault();
             }
         }
 
@@ -115,7 +115,7 @@
         {
             get
             {
-                return this.BiosFirmwares.FirstOrDefault();
+                return this.BiosFirmwares?.FirstOrDefault();
             }
         }
 
@@ -137,7 +137,7 @@
         {
             get
             {
-                return this.SmbiosTables.FirstOrDefault();
+                return this.SmbiosTables?.FirstOrDefault();
             }
         }
 
@@ -159,7 +159,7 @@
         {
             get
             {
-                return this.Processors.FirstOrDefault();
+                return this.Processors?.FirstOrDefault();
             }
         }
 
@@ -191,7 +191,7 @@
         {
             get
             {
-                return this.Monitors.FirstOrDefault();
+                return this.Monitors?.FirstOrDefault();
             }
         }
 
@@ -213,7 +213,7 @@
         {
             get
             {
-                return this.VideoControllers.FirstOrDefault();
+                return this.VideoControllers?.FirstOrDefault();
             }
         }
 
@@ -235,7 +235,7 @@
         {
             get
             {
-                return this.Printers.FirstOrDefault();
+                return this.Printers?.FirstOrDefault();
             }
         }
 
@@ -257,7 +257,7 @@
         {
             get
             {
-                return this.Users.FirstOrDefault();
+                return this.Users?.FirstOrDefault();
             }
         }
 
@@ -279,7 +279,7 @@
         {
             get
             {
-                return this.OperatingSystems.FirstOrDefault();
+                return this.OperatingSystems?.FirstOrDefault();
             }
         }
 
@@ -301,7 +301,7 @@
         {
             get
             {
-                return this.Wifis.FirstOrDefault();
+                return this.Wifis?.FirstOrDefault();
             }
         }
 
@@ -323,7 +323,7 @@
         {
             get
             {
-                return this.Routers.FirstOrDefault();
+                return this.Routers?.FirstOrDefault();
             }
         }
 

@@ -16,7 +16,7 @@
         {
             get;
             set;
-        } = TimeSpan.FromSeconds(10);
+        } = TimeSpan.FromSeconds(5);
 
         /// <summary>
         /// Gets or sets a value indicating whether it should execute and include the neighbor endpoints scan.
@@ -34,6 +34,6 @@
         {
             get;
             set;
-        } = true;
+        } = false;
     }
 }

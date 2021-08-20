@@ -38,13 +38,170 @@
         /// Gets the current hardware information of this (local) computer.
         /// </summary>
         /// <param name="InConfig">The configuration.</param>
+        #if NET5_0
+        public static async ValueTask<Hwid> GetHwidAsync(HardwareIdsConfig InConfig = null)
+        #else
         public static async Task<Hwid> GetHwidAsync(HardwareIdsConfig InConfig = null)
+        #endif
         {
             if (InConfig == null)
                 InConfig = new HardwareIdsConfig();
 
             var Hwid = new Hwid();
             var HwidTasks = new List<Task>();
+
+            // 
+            // Retrieve the WIFI endpoints currently available around the computer.
+            // 
+
+            if (InConfig.ScanNeighborEndpoints)
+            {
+                HwidTasks.Add(Task.Run(async () =>
+                {
+                    // 
+                    // Scan for the available WIFI endpoints around this computer.
+                    // 
+
+                    var NeighborEndpoints = (IEnumerable<Guid>) null;
+
+                    try
+                    {
+                        NeighborEndpoints = await NativeWifi.ScanNetworksAsync(InConfig.DurationOfNetworkScan);
+                    }
+                    catch (Exception)
+                    {
+                        // ...
+                    }
+
+                    // 
+                    // Retrieve every available WIFI endpoints that have been previously scanned.
+                    // 
+
+                    if (NeighborEndpoints != null)
+                    {
+                        var AvailableEndpoints = (IEnumerable<BssNetworkPack>) null;
+
+                        try
+                        {
+                            AvailableEndpoints = NativeWifi.EnumerateBssNetworks();
+                        }
+                        catch (Exception)
+                        {
+                            // ...
+                        }
+
+                        // 
+                        // For each available WIFI endpoint...
+                        // 
+
+                        if (AvailableEndpoints != null)
+                        {
+                            foreach (var Wifi in AvailableEndpoints)
+                            {
+                                Hwid.Wifis.Add(new HwWifi
+                                {
+                                    Id = (int) Hwid.Wifis.Count,
+                                    Ssid = Wifi.Ssid.ToString(),
+                                    Bssid = string.Join(":", Wifi.Bssid.ToBytes().Select(T => T.ToString("X2"))),
+                                    Strength = Wifi.SignalStrength,
+                                    Channel = Wifi.Channel,
+                                    Frequency = Wifi.Frequency,
+                                    Band = Wifi.Band,
+                                    Quality = Wifi.LinkQuality,
+                                });
+                            }
+                        }
+                    }
+                }));
+            }
+
+            // 
+            // Retrieve the WIFI endpoints this computer has connected to in the past.
+            // 
+
+            /* try
+            {
+                var SelectedWifiProfile = RegistryUtils.GetValue<string>(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Control Panel\Settings\Network\Preferences\", "SelectedWiFiProfile");
+                
+                foreach (var Wifi in Wifi)
+                {
+                    Hwid.Wifis.Add(new HwWifi
+                    {
+                        Id = (int) Hwid.Wifis.Count,
+                        Name = "",
+                    });
+                }
+            }
+            catch (Exception)
+            {
+                // ...
+            } */
+
+            // 
+            // Retrieve information about the routers.
+            // 
+
+            if (InConfig.ScanLocalNetworkDevices)
+            {
+                HwidTasks.Add(Task.Run(() =>
+                {
+                    var Interfaces = NetworkInterface.GetAllNetworkInterfaces().Where(T => T.OperationalStatus == OperationalStatus.Up && T.NetworkInterfaceType != NetworkInterfaceType.Loopback);
+
+                    foreach (var Interface in Interfaces)
+                    {
+                        var Entry = new HwRouter() { Id = Hwid.Routers.Count };
+                        var IpProperties = Interface.GetIPProperties();
+
+                        // 
+                        // Retrieve the gateway and IP ranges.
+                        // 
+
+                        foreach (var GatewayAddress in IpProperties.GatewayAddresses.Where(T => T.Address.AddressFamily == AddressFamily.InterNetwork))
+                            Entry.Gateways.Add(new HwRouter.NetworkDevice() { Address = GatewayAddress.Address, MacAddress = null } );
+
+                        foreach (var DnsAddress in IpProperties.DnsAddresses.Where(T => T.AddressFamily == AddressFamily.InterNetwork || T.AddressFamily == AddressFamily.InterNetworkV6))
+                            Entry.DnsServers.Add(DnsAddress.ToString());
+
+                        foreach (var DhcpServerAddress in IpProperties.DhcpServerAddresses.Where(T => T.AddressFamily == AddressFamily.InterNetwork))
+                            Entry.DhcpServers.Add(DhcpServerAddress.ToString());
+
+                        // 
+                        // Scan each DHCP servers for devices connected to the router.
+                        // 
+
+                        foreach (var DhcpServerAddress in Entry.DhcpServers)
+                        {
+                            var IpSections = DhcpServerAddress.Split('.');
+                            var DhcpStartIndex = int.Parse(IpSections.Last());
+
+                            Parallel.For(DhcpStartIndex, 20, new ParallelOptions { MaxDegreeOfParallelism = 16 }, DhcpIndex =>
+                            {
+                                var MacAddressLength = 6;
+                                var MacAddress = new byte[6];
+                                var DhcpAddress = string.Join(".", IpSections[0], IpSections[1], IpSections[2], DhcpIndex);
+                                var IpAddress = IPAddress.Parse(DhcpAddress);
+                                var DhcpStatus = SendARP((uint) IpAddress.Address, 0, MacAddress, ref MacAddressLength);
+
+                                if (DhcpStatus == 0)
+                                {
+                                    var Gateway = Entry.Gateways.FirstOrDefault(T => T.Address.Equals(IpAddress));
+
+                                    if (Gateway != null)
+                                    {
+                                        Gateway.MacAddress = string.Join(":", MacAddress.Select(T => T.ToString("X2")));
+                                    }
+                                    else
+                                    {
+                                        Entry.NetworkDevices.Add(new HwRouter.NetworkDevice() { Address = IpAddress, MacAddress = string.Join(":", MacAddress.Select(T => T.ToString("X2"))) });
+                                    }
+                                }
+                            });
+                        }
+
+                        Hwid.Routers.Add(Entry);
+                    }
+                }));
+            }
 
             // 
             // Retrieve the disk devices connected to this computer.
@@ -415,164 +572,20 @@
             }
 
             // 
-            // Retrieve the WIFI endpoints currently available around the computer.
-            // 
-
-            if (InConfig.ScanNeighborEndpoints)
-            {
-                HwidTasks.Add(Task.Run(async () =>
-                {
-                    // 
-                    // Scan for the available WIFI endpoints around this computer.
-                    // 
-
-                    var NeighborEndpoints = (IEnumerable<Guid>) null;
-
-                    try
-                    {
-                        NeighborEndpoints = await NativeWifi.ScanNetworksAsync(InConfig.DurationOfNetworkScan);
-                    }
-                    catch (Exception)
-                    {
-                        // ...
-                    }
-
-                    // 
-                    // Retrieve every available WIFI endpoints that have been previously scanned.
-                    // 
-
-                    if (NeighborEndpoints != null)
-                    {
-                        var AvailableEndpoints = (IEnumerable<BssNetworkPack>) null;
-
-                        try
-                        {
-                            AvailableEndpoints = NativeWifi.EnumerateBssNetworks();
-                        }
-                        catch (Exception)
-                        {
-                            // ...
-                        }
-
-                        // 
-                        // For each available WIFI endpoint...
-                        // 
-
-                        if (AvailableEndpoints != null)
-                        {
-                            foreach (var Wifi in AvailableEndpoints)
-                            {
-                                Hwid.Wifis.Add(new HwWifi
-                                {
-                                    Id = (int) Hwid.Wifis.Count,
-                                    Ssid = Wifi.Ssid.ToString(),
-                                    Bssid = string.Join(":", Wifi.Bssid.ToBytes().Select(T => T.ToString("X2"))),
-                                    Strength = Wifi.SignalStrength,
-                                    Channel = Wifi.Channel,
-                                    Frequency = Wifi.Frequency,
-                                    Band = Wifi.Band,
-                                    Quality = Wifi.LinkQuality,
-                                });
-                            }
-                        }
-                    }
-                }));
-            }
-
-            // 
-            // Retrieve the WIFI endpoints this computer has connected to in the past.
-            // 
-
-            /* try
-            {
-                var SelectedWifiProfile = RegistryUtils.GetValue<string>(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Control Panel\Settings\Network\Preferences\", "SelectedWiFiProfile");
-                
-                foreach (var Wifi in Wifi)
-                {
-                    Hwid.Wifis.Add(new HwWifi
-                    {
-                        Id = (int) Hwid.Wifis.Count,
-                        Name = "",
-                    });
-                }
-            }
-            catch (Exception)
-            {
-                // ...
-            } */
-
-            // 
-            // Retrieve information about the routers.
-            // 
-
-            if (InConfig.ScanLocalNetworkDevices)
-            {
-                HwidTasks.Add(Task.Run(() =>
-                {
-                    var Interfaces = NetworkInterface.GetAllNetworkInterfaces().Where(T => T.OperationalStatus == OperationalStatus.Up && T.NetworkInterfaceType != NetworkInterfaceType.Loopback);
-
-                    foreach (var Interface in Interfaces)
-                    {
-                        var Entry = new HwRouter() { Id = Hwid.Routers.Count };
-                        var IpProperties = Interface.GetIPProperties();
-
-                        // 
-                        // Retrieve the gateway and IP ranges.
-                        // 
-
-                        foreach (var GatewayAddress in IpProperties.GatewayAddresses.Where(T => T.Address.AddressFamily == AddressFamily.InterNetwork))
-                            Entry.Gateways.Add(new HwRouter.NetworkDevice() { Address = GatewayAddress.Address, MacAddress = null } );
-
-                        foreach (var DnsAddress in IpProperties.DnsAddresses.Where(T => T.AddressFamily == AddressFamily.InterNetwork || T.AddressFamily == AddressFamily.InterNetworkV6))
-                            Entry.DnsServers.Add(DnsAddress.ToString());
-
-                        foreach (var DhcpServerAddress in IpProperties.DhcpServerAddresses.Where(T => T.AddressFamily == AddressFamily.InterNetwork))
-                            Entry.DhcpServers.Add(DhcpServerAddress.ToString());
-
-                        // 
-                        // Scan each DHCP servers for devices connected to the router.
-                        // 
-
-                        foreach (var DhcpServerAddress in Entry.DhcpServers)
-                        {
-                            var IpSections = DhcpServerAddress.Split('.');
-                            var DhcpStartIndex = int.Parse(IpSections.Last());
-
-                            Parallel.For(DhcpStartIndex, 40, new ParallelOptions { MaxDegreeOfParallelism = 32 }, DhcpIndex =>
-                            {
-                                var MacAddressLength = 6;
-                                var MacAddress = new byte[6];
-                                var DhcpAddress = string.Join(".", IpSections[0], IpSections[1], IpSections[2], DhcpIndex);
-                                var IpAddress = IPAddress.Parse(DhcpAddress);
-                                var DhcpStatus = SendARP((uint) IpAddress.Address, 0, MacAddress, ref MacAddressLength);
-
-                                if (DhcpStatus == 0)
-                                {
-                                    var Gateway = Entry.Gateways.FirstOrDefault(T => T.Address.Equals(IpAddress));
-
-                                    if (Gateway != null)
-                                    {
-                                        Gateway.MacAddress = string.Join(":", MacAddress.Select(T => T.ToString("X2")));
-                                    }
-                                    else
-                                    {
-                                        Entry.NetworkDevices.Add(new HwRouter.NetworkDevice() { Address = IpAddress, MacAddress = string.Join(":", MacAddress.Select(T => T.ToString("X2"))) });
-                                    }
-                                }
-                            });
-                        }
-
-                        Hwid.Routers.Add(Entry);
-                    }
-                }));
-            }
-
-            // 
             // Wait for every running tasks to terminate.
             // 
 
             if (HwidTasks.Count > 0)
-                await Task.WhenAll(HwidTasks).ConfigureAwait(false);
+            {
+                try
+                {
+                    await Task.WhenAll(HwidTasks).ConfigureAwait(false);
+                }
+                catch (Exception)
+                {
+                    // ...
+                }
+            }
 
             return Hwid;
         }
