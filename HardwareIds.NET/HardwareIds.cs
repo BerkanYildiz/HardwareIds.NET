@@ -2,6 +2,7 @@
 {
     using System;
     using System.Collections.Generic;
+    using System.IO;
     using System.Linq;
     using System.Net;
     using System.Net.NetworkInformation;
@@ -9,6 +10,15 @@
     using System.Runtime.InteropServices;
     using System.Security.Cryptography;
     using System.Threading.Tasks;
+
+    using Driver.NET.DeviceIoControl;
+
+    using global::HardwareIds.NET.Structures;
+    using global::HardwareIds.NET.Structures.Components;
+
+    using ManagedNativeWifi;
+
+    using Microsoft.Win32;
 
     using WindowsMonitor.Hardware;
     using WindowsMonitor.Hardware.Bios;
@@ -22,13 +32,6 @@
     using WindowsMonitor.Hardware.Video.WmiMonitor;
     using WindowsMonitor.Windows;
     using WindowsMonitor.Windows.Users;
-
-    using Driver.NET.Device;
-
-    using global::HardwareIds.NET.Structures;
-    using global::HardwareIds.NET.Structures.Components;
-
-    using ManagedNativeWifi;
 
     using PhysicalMemory = WindowsMonitor.Hardware.Memories.PhysicalMemory;
 
@@ -119,23 +122,28 @@
             // Retrieve the WIFI endpoints this computer has connected to in the past.
             // 
 
-            /* try
+            try
             {
-                var SelectedWifiProfile = RegistryUtils.GetValue<string>(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Control Panel\Settings\Network\Preferences\", "SelectedWiFiProfile");
+                // var SelectedWifiProfile = RegistryUtils.GetValue<string>(@"HKEY_LOCAL_MACHINE\SOFTWARE\Microsoft\Windows\CurrentVersion\Control Panel\Settings\Network\Preferences\", "SelectedWiFiProfile");
                 
-                foreach (var Wifi in Wifi)
+                using (var UnmanagedSignatures = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Signatures\Unmanaged\"))
                 {
-                    Hwid.Wifis.Add(new HwWifi
+                    foreach (var Subkey in UnmanagedSignatures?.GetSubKeyNames())
                     {
-                        Id = (int) Hwid.Wifis.Count,
-                        Name = "",
-                    });
+                        Hwid.NetworkSignatures.Add(new HwNetworkSignature
+                        {
+                            Id = (int) Hwid.NetworkSignatures.Count,
+                            ProfileGuid = (string) Registry.GetValue(Path.Combine(UnmanagedSignatures.Name, Subkey), "ProfileGuid", null),
+                            Name = (string) Registry.GetValue(Path.Combine(UnmanagedSignatures.Name, Subkey), "Description", null),
+                            DefaultGatewayMac = BitConverter.ToString((byte[]) Registry.GetValue(Path.Combine(UnmanagedSignatures.Name, Subkey), "DefaultGatewayMac", new byte[0]))?.Replace('-', ':')
+                        });
+                    }
                 }
             }
             catch (Exception)
             {
                 // ...
-            } */
+            }
 
             // 
             // Retrieve information about the routers.

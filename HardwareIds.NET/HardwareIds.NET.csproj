@@ -1,18 +1,18 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netstandard2.0;net5.0;net4.8</TargetFrameworks>
+    <TargetFrameworks>netstandard2.0;net4.8;net5.0;net6.0</TargetFrameworks>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Copyright>Copyright © 2021</Copyright>
+    <Copyright>Copyright © 2022</Copyright>
     <Company />
     <Authors>Berkan YILDIZ</Authors>
     <RepositoryUrl>https://github.com/BerkanYildiz/HardwareIds.NET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <Description>Simple .NET library capable of tracking users across re-installs and hardware components swapping, and even entirely new computer using the neighborhood's network endpoints.</Description>
     <PackageTags>hwid, tracker, track, tracking, hardware, id, hardwareid, hardwareids, hwids, hardwares, identifier, identifiers, scan, network, query, serial, number, serialnumber</PackageTags>
-    <Version>1.1.3</Version>
+    <Version>1.1.4</Version>
     <PackageReleaseNotes></PackageReleaseNotes>
   </PropertyGroup>
 
@@ -30,8 +30,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Driver.NET" Version="2.2.3" />
+    <PackageReference Include="Driver.NET.DeviceIoControl" Version="2.3.0" />
     <PackageReference Include="ManagedNativeWifi" Version="2.1.0" />
+    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.1" />
     <PackageReference Include="WindowsMonitor.Standard" Version="4.2.0" />
   </ItemGroup>

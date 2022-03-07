@@ -328,6 +328,16 @@
         }
 
         /// <summary>
+        /// Gets or sets the network signatures.
+        /// </summary>
+        [JsonProperty("network_signatures")]
+        public List<HwNetworkSignature> NetworkSignatures
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="Hwid"/> class.
         /// </summary>
         public Hwid()
@@ -348,6 +358,7 @@
             this.OperatingSystems = new List<HwOperatingSystem>();
             this.Wifis = new List<HwWifi>();
             this.Routers = new List<HwRouter>();
+            this.NetworkSignatures = new List<HwNetworkSignature>();
         }
     }
 }
