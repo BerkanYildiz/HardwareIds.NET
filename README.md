@@ -18,7 +18,20 @@ and retrieve the MAC address of every devices connected, like printers, Smart TV
 ## Example
 
 ```csharp
-soon :-)
+using HardwareIds.NET;
+
+var Hwid = await HardwareIds.GetHwidAsync(new HardwareIdsConfig {
+  ScanLocalNetworkDevices = false,
+  ScanNeighborEndpoints = true,
+  DurationOfNetworkScan = TimeSpan.FromSeconds(5)
+});
+
+foreach (var Disk in Hwid.Disks)
+{
+    Console.WriteLine($"  DISK->ID:       {Disk.Id}");
+    Console.WriteLine($"  DISK->NAME:     {Disk.Model}");
+    Console.WriteLine($"  DISK->SN:       {Disk.SerialNumber}");
+}
 ```
 
 # Licence
