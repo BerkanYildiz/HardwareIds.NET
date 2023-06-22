@@ -11,51 +11,31 @@
         /// Gets or sets the identifier.
         /// </summary>
         [JsonProperty("id")]
-        public int Id
-        {
-            get;
-            set;
-        }
+        public int Id { get; set; }
 
         /// <summary>
         /// Gets or sets the manufacturer.
         /// </summary>
         [JsonProperty("manufacturer")]
-        public string Manufacturer
-        {
-            get;
-            set;
-        }
+        public string Manufacturer { get; set; }
 
         /// <summary>
         /// Gets or sets the name.
         /// </summary>
         [JsonProperty("name")]
-        public string Name
-        {
-            get;
-            set;
-        }
+        public string Name { get; set; }
 
         /// <summary>
         /// Gets or sets the product.
         /// </summary>
         [JsonProperty("product")]
-        public string Product
-        {
-            get;
-            set;
-        }
+        public string Product { get; set; }
 
         /// <summary>
         /// Gets or sets the serial number.
         /// </summary>
         [JsonProperty("serial_number")]
-        public string SerialNumber
-        {
-            get;
-            set;
-        }
+        public string SerialNumber { get; set; }
 
         /// <summary>
         /// Turns a 'WmiMonitorID' class ushort encoded data to a UTF8 string.
