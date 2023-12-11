@@ -51,7 +51,7 @@
         /// <summary>
         /// Gets or sets a value indicating whether this network adapter is enabled or not.
         /// </summary>
-        [JsonProperty("is_physical")]
+        [JsonProperty("is_enabled")]
         public bool IsEnabled { get; set; }
 
         /// <summary>
