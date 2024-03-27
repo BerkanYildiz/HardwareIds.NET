@@ -2,39 +2,38 @@
 {
     using System.Collections.Generic;
     using System.Net;
-
-    using Newtonsoft.Json;
+    using System.Text.Json.Serialization;
 
     public class HwRouter
     {
         /// <summary>
         /// Gets or sets the identifier.
         /// </summary>
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public int Id { get; set; }
 
         /// <summary>
         /// Gets or sets the gateways.
         /// </summary>
-        [JsonProperty("gateways")]
+        [JsonPropertyName("gateways")]
         public List<HwNetworkDevice> Gateways { get; set; } = new List<HwNetworkDevice>();
 
         /// <summary>
         /// Gets or sets the DNS servers.
         /// </summary>
-        [JsonProperty("dns_servers")]
+        [JsonPropertyName("dns_servers")]
         public List<string> DnsServers { get; set; } = new List<string>();
 
         /// <summary>
         /// Gets or sets the DHCP servers.
         /// </summary>
-        [JsonProperty("dhcp_servers")]
+        [JsonPropertyName("dhcp_servers")]
         public List<string> DhcpServers { get; set; } = new List<string>();
 
         /// <summary>
         /// Gets or sets the network devices.
         /// </summary>
-        [JsonProperty("network_devices")]
+        [JsonPropertyName("network_devices")]
         public List<HwNetworkDevice> NetworkDevices { get; set; } = new List<HwNetworkDevice>();
     }
 
@@ -43,10 +42,10 @@
         [JsonIgnore]
         public IPAddress Address { get; set; }
 
-        [JsonProperty("mac_address")]
+        [JsonPropertyName("mac_address")]
         public string MacAddress { get; set; }
 
-        [JsonProperty("ip_address")]
+        [JsonPropertyName("ip_address")]
         public string Ip
         {
             get => Address?.ToString();

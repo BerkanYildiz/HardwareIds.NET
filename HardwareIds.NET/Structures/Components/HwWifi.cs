@@ -1,25 +1,25 @@
 ﻿namespace HardwareIds.NET.Structures.Components
 {
-    using Newtonsoft.Json;
+    using System.Text.Json.Serialization;
 
     public class HwWifi
     {
         /// <summary>
         /// Gets or sets the identifier.
         /// </summary>
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public int Id { get; set; }
 
         /// <summary>
         /// Gets or sets the name.
         /// </summary>
-        [JsonProperty("ssid")]
+        [JsonPropertyName("ssid")]
         public string Ssid { get; set; }
 
         /// <summary>
         /// Gets or sets the MAC address.
         /// </summary>
-        [JsonProperty("bssid")]
+        [JsonPropertyName("bssid")]
         public string Bssid { get; set; }
 
         /// <summary>

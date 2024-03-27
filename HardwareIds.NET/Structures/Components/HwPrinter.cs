@@ -1,43 +1,43 @@
 ﻿namespace HardwareIds.NET.Structures.Components
 {
-    using Newtonsoft.Json;
+    using System.Text.Json.Serialization;
 
     public class HwPrinter
     {
         /// <summary>
         /// Gets or sets the identifier.
         /// </summary>
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public int Id { get; set; }
 
         /// <summary>
         /// Gets or sets the name.
         /// </summary>
-        [JsonProperty("name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
         /// <summary>
         /// Gets or sets the port name.
         /// </summary>
-        [JsonProperty("port_name")]
+        [JsonPropertyName("port_name")]
         public string PortName { get; set; }
 
         /// <summary>
         /// Gets or sets the location.
         /// </summary>
-        [JsonProperty("location")]
+        [JsonPropertyName("location")]
         public string Location { get; set; }
 
         /// <summary>
         /// Gets or sets the resolution width.
         /// </summary>
-        [JsonProperty("width")]
+        [JsonPropertyName("width")]
         public uint Width { get; set; }
 
         /// <summary>
         /// Gets or sets the resolution height.
         /// </summary>
-        [JsonProperty("height")]
+        [JsonPropertyName("height")]
         public uint Height { get; set; }
     }
 }

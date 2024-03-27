@@ -2,50 +2,34 @@
 {
     using System.Collections.Generic;
     using System.Linq;
+    using System.Text.Json.Serialization;
 
     using global::HardwareIds.NET.Structures.Components;
-
-    using Newtonsoft.Json;
 
     public class Hwid
     {
         /// <summary>
-        /// The JSON serialization (and deserialization) settings.
-        /// </summary>
-        public static readonly JsonSerializerSettings JsonSettings = new JsonSerializerSettings
-        {
-            DateFormatHandling = DateFormatHandling.IsoDateFormat,
-            DateTimeZoneHandling = DateTimeZoneHandling.Utc,
-            NullValueHandling = NullValueHandling.Include,
-            DefaultValueHandling = DefaultValueHandling.Include,
-            TypeNameHandling = TypeNameHandling.Auto,
-            PreserveReferencesHandling = PreserveReferencesHandling.None,
-            ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-            MissingMemberHandling = MissingMemberHandling.Ignore
-        };
-
-        /// <summary>
         /// Gets or sets the disks.
         /// </summary>
-        [JsonProperty("disks")]
+        [JsonPropertyName("disks")]
         public List<HwDisk> Disks { get; set; }
 
         /// <summary>
         /// Gets or sets the volumes.
         /// </summary>
-        [JsonProperty("volumes")]
+        [JsonPropertyName("volumes")]
         public List<HwVolume> Volumes { get; set; }
 
         /// <summary>
         /// Gets or sets the network adapters.
         /// </summary>
-        [JsonProperty("network_adapters")]
+        [JsonPropertyName("network_adapters")]
         public List<HwNetworkAdapter> NetworkAdapters { get; set; }
 
         /// <summary>
         /// Gets or sets the baseboards.
         /// </summary>
-        [JsonProperty("baseboards")]
+        [JsonPropertyName("baseboards")]
         public List<HwBaseboard> Baseboards { get; set; }
 
         /// <summary>
@@ -57,7 +41,7 @@
         /// <summary>
         /// Gets or sets the motherboards.
         /// </summary>
-        [JsonProperty("motherboards")]
+        [JsonPropertyName("motherboards")]
         public List<HwMotherboard> Motherboards { get; set; }
 
         /// <summary>
@@ -69,7 +53,7 @@
         /// <summary>
         /// Gets or sets the BIOS firmwares.
         /// </summary>
-        [JsonProperty("bios_firmwares")]
+        [JsonPropertyName("bios_firmwares")]
         public List<HwBios> BiosFirmwares { get; set; }
 
         /// <summary>
@@ -81,7 +65,7 @@
         /// <summary>
         /// Gets or sets the SMBIOS Table(s).
         /// </summary>
-        [JsonProperty("smbios_tables")]
+        [JsonPropertyName("smbios_tables")]
         public List<HwSmbios> SmbiosTables { get; set; }
 
         /// <summary>
@@ -93,7 +77,7 @@
         /// <summary>
         /// Gets or sets the processors.
         /// </summary>
-        [JsonProperty("processors")]
+        [JsonPropertyName("processors")]
         public List<HwProcessor> Processors { get; set; }
 
         /// <summary>
@@ -105,13 +89,13 @@
         /// <summary>
         /// Gets or sets the memory sticks.
         /// </summary>
-        [JsonProperty("memory_sticks")]
+        [JsonPropertyName("memory_sticks")]
         public List<HwMemoryStick> MemorySticks { get; set; }
 
         /// <summary>
         /// Gets or sets the monitors.
         /// </summary>
-        [JsonProperty("monitors")]
+        [JsonPropertyName("monitors")]
         public List<HwMonitor> Monitors { get; set; }
 
         /// <summary>
@@ -123,7 +107,7 @@
         /// <summary>
         /// Gets or sets the video controllers.
         /// </summary>
-        [JsonProperty("video_controllers")]
+        [JsonPropertyName("video_controllers")]
         public List<HwVideo> VideoControllers { get; set; }
 
         /// <summary>
@@ -135,7 +119,7 @@
         /// <summary>
         /// Gets or sets the printers.
         /// </summary>
-        [JsonProperty("printers")]
+        [JsonPropertyName("printers")]
         public List<HwPrinter> Printers { get; set; }
 
         /// <summary>
@@ -147,7 +131,7 @@
         /// <summary>
         /// Gets or sets the users.
         /// </summary>
-        [JsonProperty("users")]
+        [JsonPropertyName("users")]
         public List<HwUser> Users { get; set; }
 
         /// <summary>
@@ -159,7 +143,7 @@
         /// <summary>
         /// Gets or sets the operating systems.
         /// </summary>
-        [JsonProperty("operating_systems")]
+        [JsonPropertyName("operating_systems")]
         public List<HwOperatingSystem> OperatingSystems { get; set; }
 
         /// <summary>
@@ -171,7 +155,7 @@
         /// <summary>
         /// Gets or sets the wifis.
         /// </summary>
-        [JsonProperty("wifis")]
+        [JsonPropertyName("wifis")]
         public List<HwWifi> Wifis { get; set; }
 
         /// <summary>
@@ -183,7 +167,7 @@
         /// <summary>
         /// Gets or sets the routers.
         /// </summary>
-        [JsonProperty("routers")]
+        [JsonPropertyName("routers")]
         public List<HwRouter> Routers { get; set; }
 
         /// <summary>
@@ -195,7 +179,7 @@
         /// <summary>
         /// Gets or sets the network signatures.
         /// </summary>
-        [JsonProperty("network_signatures")]
+        [JsonPropertyName("network_signatures")]
         public List<HwNetworkSignature> NetworkSignatures { get; set; }
 
         /// <summary>

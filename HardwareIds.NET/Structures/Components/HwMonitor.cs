@@ -2,39 +2,38 @@
 {
     using System;
     using System.Text;
-
-    using Newtonsoft.Json;
+    using System.Text.Json.Serialization;
 
     public class HwMonitor
     {
         /// <summary>
         /// Gets or sets the identifier.
         /// </summary>
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public int Id { get; set; }
 
         /// <summary>
         /// Gets or sets the manufacturer.
         /// </summary>
-        [JsonProperty("manufacturer")]
+        [JsonPropertyName("manufacturer")]
         public string Manufacturer { get; set; }
 
         /// <summary>
         /// Gets or sets the name.
         /// </summary>
-        [JsonProperty("name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
         /// <summary>
         /// Gets or sets the product.
         /// </summary>
-        [JsonProperty("product")]
+        [JsonPropertyName("product")]
         public string Product { get; set; }
 
         /// <summary>
         /// Gets or sets the serial number.
         /// </summary>
-        [JsonProperty("serial_number")]
+        [JsonPropertyName("serial_number")]
         public string SerialNumber { get; set; }
 
         /// <summary>

@@ -1,31 +1,31 @@
 ﻿namespace HardwareIds.NET.Structures.Components
 {
-    using Newtonsoft.Json;
+    using System.Text.Json.Serialization;
 
     public class HwVolume
     {
         /// <summary>
         /// Gets or sets the identifier.
         /// </summary>
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public int Id { get; set; }
 
         /// <summary>
         /// Gets or sets the path.
         /// </summary>
-        [JsonProperty("path")]
+        [JsonPropertyName("path")]
         public string Path { get; set; }
 
         /// <summary>
         /// Gets or sets the letter.
         /// </summary>
-        [JsonProperty("letter")]
+        [JsonPropertyName("letter")]
         public string Letter { get; set; }
 
         /// <summary>
         /// Gets or sets the serial number.
         /// </summary>
-        [JsonProperty("serial_number")]
+        [JsonPropertyName("serial_number")]
         public uint SerialNumber { get; set; }
     }
 }

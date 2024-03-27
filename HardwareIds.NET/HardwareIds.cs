@@ -3,6 +3,7 @@
     using System;
     using System.Collections.Generic;
     using System.Runtime.InteropServices;
+    using System.Threading;
     using System.Threading.Tasks;
 
     using global::HardwareIds.NET.Structures;
@@ -13,10 +14,11 @@
         /// Gets the current hardware information of this (local) computer.
         /// </summary>
         /// <param name="InConfig">The configuration.</param>
-    #if NET6_0 || NET7_0
-        public static async ValueTask<Hwid> GetHwidAsync(HardwareIdsConfig InConfig = null)
+        /// <param name="InCancellationToken">The cancellation token.</param>
+    #if NET
+        public static async ValueTask<Hwid> GetHwidAsync(HardwareIdsConfig InConfig = null, CancellationToken InCancellationToken = default)
     #else
-        public static async Task<Hwid> GetHwidAsync(HardwareIdsConfig InConfig = null)
+        public static async Task<Hwid> GetHwidAsync(HardwareIdsConfig InConfig = null, CancellationToken InCancellationToken = default)
     #endif
         {
             var Hwid = new Hwid();
@@ -27,14 +29,14 @@
             // Retrieve the WIFI endpoints currently available around the computer.
             // 
 
-            if (InConfig?.ScanNeighborEndpoints.GetValueOrDefault(true) ?? true)
+            if (InConfig.ScanNeighborEndpoints.GetValueOrDefault(true))
                 HwidTasks.Add(ScanNetworkEndpointsAsync(Hwid, InConfig?.DurationOfNetworkScan));
 
             // 
             // Retrieve information about the routers.
             // 
 
-            if (InConfig?.ScanLocalNetworkDevices.GetValueOrDefault(false) ?? false)
+            if (InConfig.ScanLocalNetworkDevices.GetValueOrDefault(false))
                 HwidTasks.Add(ScanNetworkDevicesAsync(Hwid));
 
             // 

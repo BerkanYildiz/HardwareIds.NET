@@ -1,39 +1,38 @@
 ﻿namespace HardwareIds.NET.Structures.Components
 {
     using System;
-
-    using Newtonsoft.Json;
+    using System.Text.Json.Serialization;
 
     public class HwMotherboard
     {
         /// <summary>
         /// Gets or sets the identifier.
         /// </summary>
-        [JsonProperty("id")]
+        [JsonPropertyName("id")]
         public int Id { get; set; }
 
         /// <summary>
         /// Gets or sets the name.
         /// </summary>
-        [JsonProperty("name")]
+        [JsonPropertyName("name")]
         public string Name { get; set; }
 
         /// <summary>
         /// Gets or sets the vendor.
         /// </summary>
-        [JsonProperty("vendor")]
+        [JsonPropertyName("vendor")]
         public string Vendor { get; set; }
 
         /// <summary>
         /// Gets or sets the version.
         /// </summary>
-        [JsonProperty("version")]
+        [JsonPropertyName("version")]
         public string Version { get; set; }
 
         /// <summary>
         /// Gets or sets the UUID.
         /// </summary>
-        [JsonProperty("UUID")]
+        [JsonPropertyName("UUID")]
         public Guid UUID { get; set; }
     }
 }
