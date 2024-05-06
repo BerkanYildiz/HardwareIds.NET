@@ -13,42 +13,32 @@
 
     public static partial class HardwareIds
     {
-        private static async Task ScanNetworkEndpointsAsync(Hwid InHwid, TimeSpan? InTimeout = null)
+        private static async Task ScanNetworkEndpointsAsync(Hwid InHwid, TimeSpan? InTimeout = null, CancellationToken InCancellationToken = default)
         {
             // 
-            // Scan for the available WIFI endpoints around this computer.
+            // Scan for the available WI-FI endpoints around this computer.
             // 
-
+            
             var NeighborEndpoints = (IEnumerable<Guid>) null;
 
-            try
+            using (var WifiScanCancellationSource = new CancellationTokenSource(InTimeout.GetValueOrDefault(TimeSpan.FromSeconds(7))))
             {
-                using (var CancellationSource = new CancellationTokenSource(InTimeout.GetValueOrDefault(TimeSpan.FromSeconds(7))))
+                using (var LinkedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(InCancellationToken, WifiScanCancellationSource.Token))
                 {
-                    NeighborEndpoints = await NativeWifi.ScanNetworksAsync(InTimeout.GetValueOrDefault(TimeSpan.FromSeconds(7)), CancellationSource.Token);
+                    try { NeighborEndpoints = await NativeWifi.ScanNetworksAsync(InTimeout.GetValueOrDefault(TimeSpan.FromSeconds(7)), LinkedCancellationSource.Token); }
+                    catch { }
                 }
-            }
-            catch (Exception)
-            {
-                // ...
             }
 
             // 
-            // Retrieve every available WIFI endpoints that have been previously scanned.
+            // Retrieve every available WI-FI endpoints that have been previously scanned.
             // 
 
             if (NeighborEndpoints != null)
             {
                 var AvailableEndpoints = (IEnumerable<BssNetworkPack>) null;
-
-                try
-                {
-                    AvailableEndpoints = NativeWifi.EnumerateBssNetworks();
-                }
-                catch (Exception)
-                {
-                    // ...
-                }
+                try { AvailableEndpoints = NativeWifi.EnumerateBssNetworks(); }
+                catch { }
 
                 // 
                 // For each available WIFI endpoint...

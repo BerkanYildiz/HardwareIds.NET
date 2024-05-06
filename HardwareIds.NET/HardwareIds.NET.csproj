@@ -12,14 +12,14 @@
     <RepositoryType>git</RepositoryType>
     <Description>Simple .NET library capable of tracking users across re-installs and hardware components swapping, and even entirely new computer using the neighborhood's network endpoints.</Description>
     <PackageTags>hwid, tracker, track, tracking, hardware, id, hardwareid, hardwareids, hwids, hardwares, identifier, identifiers, scan, network, query, serial, number, serialnumber</PackageTags>
-    <Version>1.1.8</Version>
+    <Version>1.1.9</Version>
     <PackageReleaseNotes></PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Driver.NET.DeviceIoControl" Version="2.3.1" />
+    <PackageReference Include="Driver.NET.DeviceIoControl" Version="2.3.2" />
     <PackageReference Include="ManagedNativeWifi" Version="2.5.0" />
     <PackageReference Include="System.Management" Version="8.0.0" />
     <PackageReference Include="System.Text.Json" Version="8.0.3" />

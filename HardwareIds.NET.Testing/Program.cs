@@ -8,7 +8,9 @@
         /// <param name="InLaunchArgs">The launch arguments.</param>
         private static async Task Main(string[] InLaunchArgs)
         {
-            var Hwid = await HardwareIds.GetHwidAsync(new HardwareIdsConfig { ScanLocalNetworkDevices = false, ScanNeighborEndpoints = true, DurationOfNetworkScan = TimeSpan.FromSeconds(5) });
+            using var CancellationTokenSource = new CancellationTokenSource();
+            CancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(10));
+            var Hwid = await HardwareIds.GetHwidAsync(new HardwareIdsConfig { ScanLocalNetworkDevices = true, ScanNeighborEndpoints = true, DurationOfNetworkScan = TimeSpan.FromSeconds(5) }, CancellationTokenSource.Token);
             Console.WriteLine($"HWID->DISKS:");
 
             foreach (var Disk in Hwid.Disks)
