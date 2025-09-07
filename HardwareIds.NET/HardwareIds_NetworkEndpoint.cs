@@ -53,7 +53,7 @@
                             Id = (int) InHwid.Wifis.Count,
                             Ssid = Wifi.Ssid.ToString(),
                             Bssid = string.Join(":", Wifi.Bssid.ToBytes().Select(T => T.ToString("X2"))),
-                            Strength = Wifi.SignalStrength,
+                            Strength = Wifi.Rssi,
                             Channel = Wifi.Channel,
                             Frequency = Wifi.Frequency,
                             Band = Wifi.Band,
