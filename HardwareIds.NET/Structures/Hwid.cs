@@ -27,6 +27,18 @@
         public List<HwNetworkAdapter> NetworkAdapters { get; set; } = [];
 
         /// <summary>
+        /// Gets or sets the Bluetooth radios.
+        /// </summary>
+        [JsonPropertyName("bluetooth_radios")]
+        public List<HwBluetoothRadio> BluetoothRadios { get; set; } = [];
+
+        /// <summary>
+        /// Gets the main Bluetooth radio.
+        /// </summary>
+        [JsonIgnore]
+        public HwBluetoothRadio? BluetoothRadio => this.BluetoothRadios?.FirstOrDefault();
+
+        /// <summary>
         /// Gets or sets the baseboards.
         /// </summary>
         [JsonPropertyName("baseboards")]
@@ -49,6 +61,18 @@
         /// </summary>
         [JsonIgnore]
         public HwMotherboard? Motherboard => this.Motherboards?.FirstOrDefault();
+
+        /// <summary>
+        /// Gets or sets the chassis (enclosures).
+        /// </summary>
+        [JsonPropertyName("chassis")]
+        public List<HwChassis> Chassis { get; set; } = [];
+
+        /// <summary>
+        /// Gets the main chassis.
+        /// </summary>
+        [JsonIgnore]
+        public HwChassis? MainChassis => this.Chassis?.FirstOrDefault();
 
         /// <summary>
         /// Gets or sets the BIOS firmwares.
@@ -91,6 +115,18 @@
         /// </summary>
         [JsonPropertyName("memory_sticks")]
         public List<HwMemoryStick> MemorySticks { get; set; } = [];
+
+        /// <summary>
+        /// Gets or sets the batteries.
+        /// </summary>
+        [JsonPropertyName("batteries")]
+        public List<HwBattery> Batteries { get; set; } = [];
+
+        /// <summary>
+        /// Gets the main battery.
+        /// </summary>
+        [JsonIgnore]
+        public HwBattery? Battery => this.Batteries?.FirstOrDefault();
 
         /// <summary>
         /// Gets or sets the monitors.

@@ -58,6 +58,12 @@
         /// </summary>
         [JsonPropertyName("install_date")]
         public DateTime? InstallDate { get; set; }
+
+        /// <summary>
+        /// Gets or sets the PnP device instance identifier.
+        /// </summary>
+        [JsonPropertyName("instance_id")]
+        public string? InstanceId { get; set; }
     }
 
     public class HwNetworkAddress

@@ -38,6 +38,10 @@
                         Name = Info.Name,
                         Product = Info.ProductCode,
                         SerialNumber = Info.SerialNumber,
+                        InstanceId = InstanceId,
+                        EdidHash = Info.Hash,
+                        ManufactureWeek = Info.ManufactureWeek,
+                        ManufactureYear = Info.ManufactureYear,
                     });
                 }
             }

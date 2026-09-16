@@ -46,5 +46,11 @@
         /// </summary>
         [JsonPropertyName("driver_version")]
         public string? DriverVersion { get; set; }
+
+        /// <summary>
+        /// Gets or sets the PnP device instance identifier.
+        /// </summary>
+        [JsonPropertyName("instance_id")]
+        public string? InstanceId { get; set; }
     }
 }

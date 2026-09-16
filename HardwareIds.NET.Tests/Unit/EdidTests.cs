@@ -1,6 +1,7 @@
 ﻿namespace HardwareIds.NET.Tests.Unit
 {
     using System;
+    using System.Linq;
     using System.Text;
 
     using global::HardwareIds.NET.Native;
@@ -99,6 +100,43 @@
             var Corrupted = BuildEdid(0x10AC, 0x4070, 1, "X", "Y");
             Corrupted[0] = 0x01;
             Assert.Null(Edid.Parse(Corrupted));
+        }
+
+        [Fact]
+        public void Parse_ComputesTheBaseBlockHashAndManufactureDate()
+        {
+            var Edid = BuildEdid(0x10AC, 0x4070, 1, "Name", "Serial");
+            Edid[16] = 12;
+            Edid[17] = 30;
+
+            var Info = global::HardwareIds.NET.Native.Edid.Parse(Edid);
+
+            Assert.NotNull(Info);
+            Assert.Equal(12, Info.ManufactureWeek);
+            Assert.Equal(2020, Info.ManufactureYear);
+            Assert.Matches("^[0-9a-f]{64}$", Info.Hash);
+
+            using var Hasher = System.Security.Cryptography.SHA256.Create();
+            Assert.Equal(string.Concat(Hasher.ComputeHash(Edid).Select(T => T.ToString("x2"))), Info.Hash);
+
+            var Extended = new byte[256];
+            Array.Copy(Edid, Extended, 128);
+            Extended[200] = 0xAA;
+            Assert.Equal(Info.Hash, global::HardwareIds.NET.Native.Edid.Parse(Extended)!.Hash);
+        }
+
+        [Fact]
+        public void Parse_ReportsUnknownManufactureDates()
+        {
+            var Edid = BuildEdid(0x10AC, 0x4070, 1, null, null);
+            Edid[16] = 0xFF;
+            Edid[17] = 0;
+
+            var Info = global::HardwareIds.NET.Native.Edid.Parse(Edid);
+
+            Assert.NotNull(Info);
+            Assert.Equal(0, Info.ManufactureWeek);
+            Assert.Equal(0, Info.ManufactureYear);
         }
 
         [Fact]

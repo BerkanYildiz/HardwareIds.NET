@@ -81,6 +81,11 @@
             return Formatted(0x0F - 4, (0x04, [InManufacturer]), (0x05, [InProduct]), (0x06, [InVersion]), (0x07, [InSerial]));
         }
 
+        public static byte[] Chassis(byte InType, byte InManufacturer = 1, byte InVersion = 2, byte InSerial = 3, byte InAssetTag = 4)
+        {
+            return Formatted(0x0D - 4, (0x04, [InManufacturer]), (0x05, [InType]), (0x06, [InVersion]), (0x07, [InSerial]), (0x08, [InAssetTag]));
+        }
+
         public static byte[] Processor(byte[] InProcessorId, byte InVoltage, ushort InCurrentSpeed, byte InStatus, byte InCoreCount, byte InThreadCount, byte InSocket = 1, byte InManufacturer = 2, byte InVersion = 3, byte InSerial = 4, byte InPartNumber = 5)
         {
             return Formatted(0x30 - 4,
@@ -209,6 +214,52 @@
             Assert.Equal("3.2.1", Smbios.Version);
             Assert.Equal((uint) Table.Data.Length, Smbios.Length);
             Assert.Matches("^[0-9a-f]{64}$", Smbios.Hash);
+        }
+
+        [Fact]
+        public void Collectors_MapChassisFieldsAndStripTheLockBit()
+        {
+            var Table = new SmbiosBuilder()
+                .Add(3, SmbiosBuilder.Chassis(0x8A), "Dell Inc.", "A00", "CHASSIS-SERIAL", "ASSET-42")
+                .Add(3, SmbiosBuilder.Chassis(0x03, InAssetTag: 0), "Micro-Star", "1.0", "MS-SERIAL")
+                .End()
+                .BuildTable();
+
+            var Hwid = new Hwid();
+            HardwareIds.RetrieveChassis(Hwid, Table);
+
+            Assert.Equal(2, Hwid.Chassis.Count);
+            Assert.Equal([0, 1], Hwid.Chassis.Select(T => T.Id));
+
+            var Laptop = Hwid.Chassis[0];
+            Assert.Equal("Dell Inc.", Laptop.Manufacturer);
+            Assert.Equal(10, Laptop.Type);
+            Assert.Equal("Notebook", Laptop.TypeName);
+            Assert.Equal("A00", Laptop.Version);
+            Assert.Equal("CHASSIS-SERIAL", Laptop.SerialNumber);
+            Assert.Equal("ASSET-42", Laptop.AssetTag);
+
+            var Desktop = Hwid.Chassis[1];
+            Assert.Equal(3, Desktop.Type);
+            Assert.Equal("Desktop", Desktop.TypeName);
+            Assert.Null(Desktop.AssetTag);
+            Assert.Same(Laptop, Hwid.MainChassis);
+        }
+
+        [Theory]
+        [InlineData(1, "Other")]
+        [InlineData(3, "Desktop")]
+        [InlineData(9, "Laptop")]
+        [InlineData(10, "Notebook")]
+        [InlineData(23, "Rack Mount Chassis")]
+        [InlineData(31, "Convertible")]
+        [InlineData(36, "Stick PC")]
+        [InlineData(0, "Unknown")]
+        [InlineData(2, "Unknown")]
+        [InlineData(99, "Unknown")]
+        public void GetChassisTypeName_FollowsTheSmbiosSpecification(int InType, string InExpected)
+        {
+            Assert.Equal(InExpected, HardwareIds.GetChassisTypeName(InType));
         }
 
         [Fact]

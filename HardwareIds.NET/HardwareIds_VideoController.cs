@@ -32,6 +32,7 @@
                         RefreshRate = Mode?.RefreshRate ?? 0,
                         DriverDate = CfgMgr32.GetDevNodeDateProperty(DevNode.Value, CfgMgr32.DEVPKEY_Device_DriverDate) ?? default,
                         DriverVersion = CfgMgr32.GetDevNodeProperty(DevNode.Value, CfgMgr32.DEVPKEY_Device_DriverVersion),
+                        InstanceId = InstanceId,
                     });
                 }
             }

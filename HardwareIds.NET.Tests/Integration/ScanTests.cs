@@ -228,6 +228,37 @@
         }
 
         [Fact]
+        public async Task LocalNetworkScan_CompletesWithinTheConfiguredWait()
+        {
+            //
+            // Probing must not block on silent hosts: a whole subnet is swept within the configured wait plus a small overhead.
+            //
+
+            using var Cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestToken);
+            Cancellation.CancelAfter(TimeSpan.FromSeconds(30));
+
+            var Timer = Stopwatch.StartNew();
+            var Hwid = await HardwareIds.GetHwidAsync(new HardwareIdsConfig { ScanLocalNetworkDevices = true, DurationOfLocalNetworkScan = TimeSpan.FromMilliseconds(500) }, Cancellation.Token);
+            Timer.Stop();
+
+            var Subnets = NetworkInterface.GetAllNetworkInterfaces()
+                .Where(T => T.OperationalStatus == OperationalStatus.Up && T.NetworkInterfaceType != NetworkInterfaceType.Loopback)
+                .SelectMany(T => T.GetIPProperties().UnicastAddresses)
+                .Count(T => T.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork && HardwareIds.GetProbeAddresses(T.Address, T.IPv4Mask, HardwareIds.NetworkProbeCount).Any());
+
+            Assert.NotNull(Hwid);
+            Assert.True(Timer.Elapsed < TimeSpan.FromSeconds(3 + Subnets), $"The scan of {Subnets} subnet(s) took {Timer.ElapsedMilliseconds} ms.");
+        }
+
+        [Fact]
+        public void Config_LocalNetworkScanWaitDefaultsToOneSecond()
+        {
+            Assert.Null(new HardwareIdsConfig().DurationOfLocalNetworkScan);
+            Assert.Equal(TimeSpan.FromSeconds(1), HardwareIds.DefaultNetworkProbeWait);
+            Assert.Equal(254, HardwareIds.NetworkProbeCount);
+        }
+
+        [Fact]
         public async Task LocalNetworkScan_HonoursCancellation()
         {
             using var Cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestToken);

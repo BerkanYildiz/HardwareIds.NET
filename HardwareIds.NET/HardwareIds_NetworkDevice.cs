@@ -7,7 +7,6 @@
     using System.Net.NetworkInformation;
     using System.Net.Sockets;
     using System.Threading;
-    using System.Threading.Tasks;
 
     using global::HardwareIds.NET.Native;
     using global::HardwareIds.NET.Structures;
@@ -16,11 +15,16 @@
     public static partial class HardwareIds
     {
         /// <summary>
-        /// The number of host addresses probed with ARP at the start of each local subnet, on top of the neighbour cache.
+        /// The number of host addresses probed at the start of each local subnet, on top of the neighbour cache (a whole /24).
         /// </summary>
-        internal const int NetworkProbeCount = 20;
+        internal const int NetworkProbeCount = 254;
 
-        internal static void ScanNetworkDevices(Hwid InHwid, CancellationToken InCancellationToken = default)
+        /// <summary>
+        /// How long the scan waits for probed devices to answer when the configuration does not say.
+        /// </summary>
+        internal static readonly TimeSpan DefaultNetworkProbeWait = TimeSpan.FromSeconds(1);
+
+        internal static void ScanNetworkDevices(Hwid InHwid, TimeSpan? InProbeWait = null, CancellationToken InCancellationToken = default)
         {
             var Interfaces = NetworkInterface.GetAllNetworkInterfaces().Where(T => T.OperationalStatus == OperationalStatus.Up && T.NetworkInterfaceType != NetworkInterfaceType.Loopback);
             var Neighbors = new List<NeighborInfo>();
@@ -70,14 +74,11 @@
                     KnownDevices[Neighbor.Address] = Neighbor.PhysicalAddress;
 
                 //
-                // Retrieve the gateways, DNS and DHCP servers. Gateways get their MAC address from the cache, or from one ARP request.
+                // Retrieve the gateways, DNS and DHCP servers. Gateways get their MAC address from the cache when it has it.
                 //
 
                 foreach (var GatewayAddress in IpProperties.GatewayAddresses.Where(T => T.Address.AddressFamily == AddressFamily.InterNetwork))
-                {
-                    var GatewayMac = KnownDevices.TryGetValue(GatewayAddress.Address, out var CachedMac) ? CachedMac : (InCancellationToken.IsCancellationRequested ? null : ResolveMacAddress(GatewayAddress.Address));
-                    Entry.Gateways.Add(new HwNetworkDevice { Address = GatewayAddress.Address, MacAddress = GatewayMac != null ? FormatMacAddress(GatewayMac) : null });
-                }
+                    Entry.Gateways.Add(new HwNetworkDevice { Address = GatewayAddress.Address, MacAddress = KnownDevices.TryGetValue(GatewayAddress.Address, out var CachedMac) ? FormatMacAddress(CachedMac) : null });
 
                 foreach (var DnsAddress in IpProperties.DnsAddresses.Where(T => T.AddressFamily == AddressFamily.InterNetwork || T.AddressFamily == AddressFamily.InterNetworkV6))
                     Entry.DnsServers.Add(DnsAddress.ToString());
@@ -86,31 +87,38 @@
                     Entry.DhcpServers.Add(DhcpServerAddress.ToString());
 
                 //
-                // List the devices already known to the neighbour cache, then probe the start of each subnet.
+                // Probe the subnets and the unresolved gateways, then list every device known for this interface.
                 // A device must live in one of the subnets of the interface, and must not answer with a gateway's MAC
                 // address: on-link routing and proxy ARP make off-link destinations look like neighbours otherwise.
                 //
 
-                var GatewayMacs = new HashSet<string>(Entry.Gateways.Where(T => T.MacAddress != null).Select(T => T.MacAddress!), StringComparer.OrdinalIgnoreCase);
-                var GatewayAddresses = new HashSet<IPAddress>(Entry.Gateways.Where(T => T.Address != null).Select(T => T.Address!));
                 var Cancelled = false;
-
-                bool IsLocalDevice(IPAddress InAddress, string InMacAddress)
-                {
-                    return !GatewayAddresses.Contains(InAddress) && !GatewayMacs.Contains(InMacAddress) && Subnets.Any(T => IsInSubnet(InAddress, T.Address, T.Mask));
-                }
 
                 if (!InCancellationToken.IsCancellationRequested)
                 {
+                    Cancelled = !ProbeNetworkDevices(Entry, Subnets, OwnAddresses, KnownDevices, InterfaceIndex, InProbeWait ?? DefaultNetworkProbeWait, InCancellationToken);
+
+                    foreach (var Gateway in Entry.Gateways.Where(T => T.MacAddress == null && T.Address != null))
+                    {
+                        if (KnownDevices.TryGetValue(Gateway.Address!, out var ProbedMac))
+                            Gateway.MacAddress = FormatMacAddress(ProbedMac);
+                        else if (!Cancelled && ResolveMacAddress(Gateway.Address!) is byte[] ResolvedMac)
+                            Gateway.MacAddress = FormatMacAddress(ResolvedMac);
+                    }
+
+                    var GatewayMacs = new HashSet<string>(Entry.Gateways.Where(T => T.MacAddress != null).Select(T => T.MacAddress!), StringComparer.OrdinalIgnoreCase);
+                    var GatewayAddresses = new HashSet<IPAddress>(Entry.Gateways.Where(T => T.Address != null).Select(T => T.Address!));
+
                     foreach (var Known in KnownDevices)
                     {
                         var MacAddress = FormatMacAddress(Known.Value);
 
-                        if (IsLocalDevice(Known.Key, MacAddress))
+                        if (GatewayAddresses.Contains(Known.Key) || GatewayMacs.Contains(MacAddress))
+                            continue;
+
+                        if (Subnets.Any(T => IsInSubnet(Known.Key, T.Address, T.Mask)))
                             Entry.NetworkDevices.Add(new HwNetworkDevice { Address = Known.Key, MacAddress = MacAddress });
                     }
-
-                    Cancelled = !ProbeNetworkDevices(Entry, Subnets, OwnAddresses, KnownDevices, IsLocalDevice, InCancellationToken);
                 }
 
                 Entry.NetworkDevices.Sort((InLeft, InRight) => CompareAddresses(InLeft.Address, InRight.Address));
@@ -124,15 +132,21 @@
         }
 
         /// <summary>
-        /// Sends ARP requests to the first hosts of each IPv4 subnet of the interface.
+        /// Makes the operating system resolve the first hosts of each IPv4 subnet of the interface: one UDP datagram
+        /// to the discard port of every host triggers an ARP request without blocking, and after a short wait the
+        /// neighbour cache holds the MAC address of every host that answered. The devices found are merged into
+        /// <paramref name="InKnownDevices"/>.
         /// </summary>
         /// <returns>False when the scan was cancelled.</returns>
-        private static bool ProbeNetworkDevices(HwRouter InEntry, IEnumerable<(IPAddress Address, IPAddress Mask)> InSubnets, HashSet<IPAddress> InOwnAddresses, Dictionary<IPAddress, byte[]> InKnownDevices, Func<IPAddress, string, bool> InIsLocalDevice, CancellationToken InCancellationToken)
+        private static bool ProbeNetworkDevices(HwRouter InEntry, List<(IPAddress Address, IPAddress Mask)> InSubnets, HashSet<IPAddress> InOwnAddresses, Dictionary<IPAddress, byte[]> InKnownDevices, int InInterfaceIndex, TimeSpan InWait, CancellationToken InCancellationToken)
         {
             var Targets = new HashSet<IPAddress>();
 
             foreach (var Subnet in InSubnets)
                 Targets.UnionWith(GetProbeAddresses(Subnet.Address, Subnet.Mask, NetworkProbeCount));
+
+            foreach (var Gateway in InEntry.Gateways.Where(T => T.MacAddress == null && T.Address != null))
+                Targets.Add(Gateway.Address!);
 
             Targets.ExceptWith(InOwnAddresses);
             Targets.ExceptWith(InKnownDevices.Keys);
@@ -142,32 +156,50 @@
 
             try
             {
-                Parallel.ForEach(Targets, new ParallelOptions { MaxDegreeOfParallelism = 16, CancellationToken = InCancellationToken }, Target =>
+                using var Socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                var Source = InSubnets.Select(T => T.Address).FirstOrDefault();
+
+                if (Source != null)
+                    Socket.Bind(new IPEndPoint(Source, 0));
+
+                foreach (var Target in Targets)
                 {
-                    var MacAddress = ResolveMacAddress(Target);
+                    if (InCancellationToken.IsCancellationRequested)
+                        return false;
 
-                    if (MacAddress == null)
-                        return;
-
-                    var Formatted = FormatMacAddress(MacAddress);
-
-                    if (!InIsLocalDevice(Target, Formatted))
-                        return;
-
-                    lock (InEntry)
-                        InEntry.NetworkDevices.Add(new HwNetworkDevice { Address = Target, MacAddress = Formatted });
-                });
+                    try
+                    {
+                        Socket.SendTo([0], new IPEndPoint(Target, 9));
+                    }
+                    catch (SocketException)
+                    {
+                        // Unreachable or filtered; nothing to resolve.
+                    }
+                }
             }
-            catch (OperationCanceledException)
+            catch (Exception)
             {
+                return !InCancellationToken.IsCancellationRequested;
+            }
+
+            if (InCancellationToken.WaitHandle.WaitOne(InWait))
                 return false;
+
+            try
+            {
+                foreach (var Neighbor in IpHlpApi.GetNeighbors().Where(T => T.InterfaceIndex == InInterfaceIndex && Targets.Contains(T.Address)))
+                    InKnownDevices[Neighbor.Address] = Neighbor.PhysicalAddress;
+            }
+            catch (Exception)
+            {
+                // ...
             }
 
             return true;
         }
 
         /// <summary>
-        /// Resolves the MAC address of an on-link IPv4 address with an ARP request.
+        /// Resolves the MAC address of an on-link IPv4 address with a blocking ARP request (used for gateways only).
         /// </summary>
         /// <param name="InAddress">The IPv4 address.</param>
         internal static byte[]? ResolveMacAddress(IPAddress InAddress)

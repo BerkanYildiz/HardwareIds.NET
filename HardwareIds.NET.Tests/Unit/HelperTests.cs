@@ -154,6 +154,9 @@
             Assert.Null(Empty.OperatingSystem);
             Assert.Null(Empty.Wifi);
             Assert.Null(Empty.Router);
+            Assert.Null(Empty.MainChassis);
+            Assert.Null(Empty.BluetoothRadio);
+            Assert.Null(Empty.Battery);
 
             var Populated = new Hwid();
             Populated.Processors.Add(new HwProcessor { Id = 0 });

@@ -5,9 +5,14 @@
     public class HardwareIdsConfig
     {
         /// <summary>
-        /// Gets or sets the duration of the network endpoints scan.
+        /// Gets or sets the duration of the network endpoints (Wi-Fi) scan.
         /// </summary>
         public TimeSpan? DurationOfNetworkScan { get; set; }
+
+        /// <summary>
+        /// Gets or sets how long the local network devices scan waits for the devices of each subnet to answer (one second by default).
+        /// </summary>
+        public TimeSpan? DurationOfLocalNetworkScan { get; set; }
 
         /// <summary>
         /// Gets or sets a value indicating whether it should execute and include the neighbor endpoints scan.

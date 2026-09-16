@@ -52,7 +52,7 @@
             // 
 
             if (!InCancellationToken.IsCancellationRequested && InConfig.ScanLocalNetworkDevices.GetValueOrDefault(false))
-                HwidTasks.Add(Task.Run(() => ScanNetworkDevices(Hwid, InCancellationToken), InCancellationToken));
+                HwidTasks.Add(Task.Run(() => ScanNetworkDevices(Hwid, InConfig.DurationOfLocalNetworkScan, InCancellationToken), InCancellationToken));
 
             // 
             // Retrieve the WI-FI endpoints this computer has connected to in the past.
@@ -83,6 +83,13 @@
                 RetrieveNetworkAdapters(Hwid);
 
             // 
+            // Retrieve the Bluetooth radios installed on this computer.
+            // 
+
+            if (!InCancellationToken.IsCancellationRequested)
+                RetrieveBluetoothRadios(Hwid);
+
+            // 
             // Retrieve the baseboard(s) installed on this computer.
             // 
 
@@ -95,6 +102,13 @@
 
             if (!InCancellationToken.IsCancellationRequested)
                 RetrieveMotherBoards(Hwid, Smbios);
+
+            // 
+            // Retrieve the chassis (enclosures) of this computer.
+            // 
+
+            if (!InCancellationToken.IsCancellationRequested)
+                RetrieveChassis(Hwid, Smbios);
 
             // 
             // Retrieve the BIOS firmwares installed on this computer's motherboard(s).
@@ -123,6 +137,13 @@
 
             if (!InCancellationToken.IsCancellationRequested)
                 RetrieveMemorySticks(Hwid, Smbios);
+
+            // 
+            // Retrieve the batteries present in this computer.
+            // 
+
+            if (!InCancellationToken.IsCancellationRequested)
+                RetrieveBatteries(Hwid);
 
             // 
             // Retrieve the monitors plugged into this computer.

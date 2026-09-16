@@ -16,7 +16,12 @@ storage and NDIS device IOCTLs, the PnP configuration manager, the EDID blocks o
 `NetUserEnum`, the print spooler, the display configuration API and the native Wi-Fi API (WlanAPI). A full scan (without the network scans)  
 takes about 10 ms, does not need administrator rights, does not depend on the WMI service, and the library has no third-party dependencies.
 
-The values returned are the same ones WMI reports, so identifiers collected with previous versions keep matching.
+The values returned are the same ones WMI reports, so identifiers collected with previous versions keep matching.  
+On top of them, version 2.0 adds identifiers WMI never exposed: every serial number a disk reports (descriptor, NVMe or ATA identify,  
+SCSI device identification page, Windows DUID) as separate fields, together with its firmware, World Wide Name and partition table GUID, the PnP  
+instance path of disks, adapters, monitors and video controllers, the EDID hash and manufacture date of monitors, the chassis  
+(enclosure) serial number and asset tag, Bluetooth radio addresses, battery serial numbers, and the machine GUID, hardware  
+profile GUID, precise install time and machine SID of the Windows installation.
 
 ## Requirements
 

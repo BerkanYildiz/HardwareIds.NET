@@ -55,7 +55,7 @@
                 Console.WriteLine();
             }
 
-            await File.WriteAllTextAsync("hwid.json", JsonSerializer.Serialize(Hwid));
+            await File.WriteAllTextAsync("hwid.json", JsonSerializer.Serialize(Hwid, new JsonSerializerOptions { WriteIndented = true }));
 
             if (!Console.IsInputRedirected)
                 Console.ReadKey(true);

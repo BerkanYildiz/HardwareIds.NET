@@ -1,6 +1,8 @@
 ﻿namespace HardwareIds.NET.Native
 {
     using System;
+    using System.Linq;
+    using System.Security.Cryptography;
     using System.Text;
 
     internal sealed class EdidInfo
@@ -9,6 +11,9 @@
         public string? ProductCode { get; set; }
         public string? SerialNumber { get; set; }
         public string? Name { get; set; }
+        public string? Hash { get; set; }
+        public int ManufactureWeek { get; set; }
+        public int ManufactureYear { get; set; }
     }
 
     internal static class Edid
@@ -58,12 +63,20 @@
                 }
             }
 
+            string Hash;
+
+            using (var Hasher = SHA256.Create())
+                Hash = string.Concat(Hasher.ComputeHash(InData, 0, 128).Select(T => T.ToString("x2")));
+
             return new EdidInfo
             {
                 Manufacturer = Manufacturer,
                 ProductCode = ProductCode,
                 SerialNumber = SerialText ?? (Serial != 0 ? Serial.ToString() : string.Empty),
                 Name = Name ?? string.Empty,
+                Hash = Hash,
+                ManufactureWeek = InData[16] == 0xFF ? 0 : InData[16],
+                ManufactureYear = InData[17] != 0 ? 1990 + InData[17] : 0,
             };
         }
 

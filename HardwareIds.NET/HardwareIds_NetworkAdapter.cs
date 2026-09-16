@@ -56,6 +56,7 @@
                         IsPhysical = Interface.IsHardware,
                         IsEnabled = Interface.IsAdminUp,
                         InstallDate = GetNetworkAdapterInstallDate(AdapterKey, DevNode),
+                        InstanceId = InstanceId,
                         Address =
                         {
                             Current = Interface.PhysicalAddress != null ? FormatMacAddress(Interface.PhysicalAddress) : null,

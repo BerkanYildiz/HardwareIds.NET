@@ -44,6 +44,11 @@
                     SerialNumber = VersionKey.GetValue("ProductId") as string,
                     InstallDate = InstallDate,
                     LastBootUpTime = DateTime.Now - TimeSpan.FromMilliseconds(Kernel32.GetTickCount64()),
+                    InstallTime = VersionKey.GetValue("InstallTime") is long InstallTime && InstallTime > 0 ? ToDateTime(InstallTime) : null,
+                    MachineGuid = ReadRegistryString(@"SOFTWARE\Microsoft\Cryptography", "MachineGuid"),
+                    SqmMachineId = ReadRegistryString(@"SOFTWARE\Microsoft\SQMClient", "MachineId"),
+                    HardwareProfileGuid = ReadRegistryString(@"SYSTEM\CurrentControlSet\Control\IDConfigDB\Hardware Profiles\0001", "HwProfileGuid"),
+                    MachineSid = GetMachineSid(),
                 });
             }
             catch (Exception)
@@ -75,6 +80,46 @@
 
                 default:
                     return Environment.Is64BitOperatingSystem ? "64-bit" : "32-bit";
+            }
+        }
+
+        /// <summary>
+        /// Gets the security identifier of the local machine (the domain part of every local account SID).
+        /// </summary>
+        internal static string? GetMachineSid()
+        {
+            try
+            {
+                return AdvApi32.LookupAccountSid(Environment.MachineName)?.Value;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private static string? ReadRegistryString(string InKey, string InValue)
+        {
+            try
+            {
+                using var Key = Registry.LocalMachine.OpenSubKey(InKey);
+                return Key?.GetValue(InValue) as string;
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+        }
+
+        private static DateTime? ToDateTime(long InFileTime)
+        {
+            try
+            {
+                return DateTime.FromFileTime(InFileTime);
+            }
+            catch (ArgumentException)
+            {
+                return null;
             }
         }
     }
