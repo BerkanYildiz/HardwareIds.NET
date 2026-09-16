@@ -15,7 +15,7 @@
         /// Gets or sets the name.
         /// </summary>
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         /// <summary>
         /// Gets or sets the resolution width.
@@ -45,6 +45,6 @@
         /// Gets or sets the driver version.
         /// </summary>
         [JsonPropertyName("driver_version")]
-        public string DriverVersion { get; set; }
+        public string? DriverVersion { get; set; }
     }
 }

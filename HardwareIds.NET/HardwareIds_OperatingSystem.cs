@@ -17,7 +17,7 @@
                 {
                     InHwid.OperatingSystems.Add(new HwOperatingSystem
                     {
-                        Id = (int) InHwid.OperatingSystems.Count,
+                        Id = InHwid.OperatingSystems.Count,
                         Name = OperatingSystem.Caption,
                         Version = OperatingSystem.Version,
                         Architecture = OperatingSystem.OsArchitecture,

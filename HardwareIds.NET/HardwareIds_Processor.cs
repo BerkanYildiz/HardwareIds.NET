@@ -17,7 +17,7 @@
                 {
                     InHwid.Processors.Add(new HwProcessor
                     {
-                        Id = (int) InHwid.Processors.Count,
+                        Id = InHwid.Processors.Count,
                         Manufacturer = Processor.Manufacturer,
                         Model = Processor.Name,
                         ModelNumber = Processor.ProcessorId,

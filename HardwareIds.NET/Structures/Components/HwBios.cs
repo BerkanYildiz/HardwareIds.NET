@@ -14,18 +14,18 @@
         /// Gets or sets the manufacturer.
         /// </summary>
         [JsonPropertyName("manufacturer")]
-        public string Manufacturer { get; set; }
+        public string? Manufacturer { get; set; }
 
         /// <summary>
         /// Gets or sets the version.
         /// </summary>
         [JsonPropertyName("version")]
-        public string Version { get; set; }
+        public string? Version { get; set; }
 
         /// <summary>
         /// Gets or sets the serial number.
         /// </summary>
         [JsonPropertyName("serial_number")]
-        public string SerialNumber { get; set; }
+        public string? SerialNumber { get; set; }
     }
 }

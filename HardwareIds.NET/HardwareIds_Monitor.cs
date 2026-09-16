@@ -17,7 +17,7 @@
                 {
                     InHwid.Monitors.Add(new HwMonitor
                     {
-                        Id = (int) InHwid.Monitors.Count,
+                        Id = InHwid.Monitors.Count,
                         Manufacturer = HwMonitor.ArrayToString(Monitor.ManufacturerName),
                         Name = HwMonitor.ArrayToString(Monitor.UserFriendlyName),
                         Product = HwMonitor.ArrayToString(Monitor.ProductCodeId),

@@ -14,19 +14,19 @@
         /// Gets or sets the name.
         /// </summary>
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         /// <summary>
         /// Gets or sets the port name.
         /// </summary>
         [JsonPropertyName("port_name")]
-        public string PortName { get; set; }
+        public string? PortName { get; set; }
 
         /// <summary>
         /// Gets or sets the location.
         /// </summary>
         [JsonPropertyName("location")]
-        public string Location { get; set; }
+        public string? Location { get; set; }
 
         /// <summary>
         /// Gets or sets the resolution width.

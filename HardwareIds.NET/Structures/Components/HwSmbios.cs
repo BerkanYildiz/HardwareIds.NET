@@ -14,13 +14,13 @@
         /// Gets or sets the version.
         /// </summary>
         [JsonPropertyName("version")]
-        public string Version { get; set; }
+        public string? Version { get; set; }
 
         /// <summary>
         /// Gets or sets the raw table's hash.
         /// </summary>
         [JsonPropertyName("hash")]
-        public string Hash { get; set; }
+        public string? Hash { get; set; }
 
         /// <summary>
         /// Gets or sets the size (in bytes) of the table.

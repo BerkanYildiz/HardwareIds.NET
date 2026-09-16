@@ -14,13 +14,13 @@
         /// Gets or sets the path.
         /// </summary>
         [JsonPropertyName("path")]
-        public string Path { get; set; }
+        public string? Path { get; set; }
 
         /// <summary>
         /// Gets or sets the letter.
         /// </summary>
         [JsonPropertyName("letter")]
-        public string Letter { get; set; }
+        public string? Letter { get; set; }
 
         /// <summary>
         /// Gets or sets the serial number.

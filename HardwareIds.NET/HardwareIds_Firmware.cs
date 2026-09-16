@@ -17,7 +17,7 @@
                 {
                     InHwid.BiosFirmwares.Add(new HwBios
                     {
-                        Id = (int) InHwid.BiosFirmwares.Count,
+                        Id = InHwid.BiosFirmwares.Count,
                         Manufacturer = BiosFirmware.Manufacturer,
                         Version = BiosFirmware.Version,
                         SerialNumber = BiosFirmware.SerialNumber,

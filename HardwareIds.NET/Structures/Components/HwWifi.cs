@@ -14,13 +14,13 @@
         /// Gets or sets the name.
         /// </summary>
         [JsonPropertyName("ssid")]
-        public string Ssid { get; set; }
+        public string? Ssid { get; set; }
 
         /// <summary>
         /// Gets or sets the MAC address.
         /// </summary>
         [JsonPropertyName("bssid")]
-        public string Bssid { get; set; }
+        public string? Bssid { get; set; }
 
         /// <summary>
         /// Gets or sets the strength.

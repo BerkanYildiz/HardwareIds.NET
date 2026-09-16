@@ -16,37 +16,40 @@
         /// Gets or sets the manufacturer.
         /// </summary>
         [JsonPropertyName("manufacturer")]
-        public string Manufacturer { get; set; }
+        public string? Manufacturer { get; set; }
 
         /// <summary>
         /// Gets or sets the name.
         /// </summary>
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         /// <summary>
         /// Gets or sets the product.
         /// </summary>
         [JsonPropertyName("product")]
-        public string Product { get; set; }
+        public string? Product { get; set; }
 
         /// <summary>
         /// Gets or sets the serial number.
         /// </summary>
         [JsonPropertyName("serial_number")]
-        public string SerialNumber { get; set; }
+        public string? SerialNumber { get; set; }
 
         /// <summary>
         /// Turns a 'WmiMonitorID' class ushort encoded data to a UTF8 string.
         /// </summary>
-        /// <param name="Array">The array.</param>
-        public static string ArrayToString(ushort[] Array)
+        /// <param name="InArray">The array.</param>
+        public static string? ArrayToString(ushort[]? InArray)
         {
-            var Result = new StringBuilder(Array.Length * sizeof(ushort));
+            if (InArray is null)
+                return null;
 
-            for (var I = 0; I < Array.Length; I++)
+            var Result = new StringBuilder(InArray.Length * sizeof(ushort));
+
+            foreach (var Value in InArray)
             {
-                var Buffer = BitConverter.GetBytes(Array[I]);
+                var Buffer = BitConverter.GetBytes(Value);
 
                 if (Buffer[0] != 0x00)
                 {

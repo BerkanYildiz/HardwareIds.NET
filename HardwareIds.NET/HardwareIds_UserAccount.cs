@@ -18,7 +18,7 @@
                 {
                     InHwid.Users.Add(new HwUser
                     {
-                        Id = (int) InHwid.Users.Count,
+                        Id = InHwid.Users.Count,
                         Username = User.Name,
                         FullName = User.FullName,
                         SID = User.Sid,

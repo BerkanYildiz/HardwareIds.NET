@@ -1,7 +1,6 @@
 ﻿namespace HardwareIds.NET
 {
     using System;
-    using System.IO;
 
     using global::HardwareIds.NET.Structures;
     using global::HardwareIds.NET.Structures.Components;
@@ -14,18 +13,25 @@
         {
             try
             {
-                using (var UnmanagedSignatures = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Signatures\Unmanaged\"))
+                using var UnmanagedSignatures = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion\NetworkList\Signatures\Unmanaged\");
+
+                if (UnmanagedSignatures is null)
+                    return;
+
+                foreach (var SubkeyName in UnmanagedSignatures.GetSubKeyNames())
                 {
-                    foreach (var Subkey in UnmanagedSignatures?.GetSubKeyNames())
+                    using var Signature = UnmanagedSignatures.OpenSubKey(SubkeyName);
+
+                    if (Signature is null)
+                        continue;
+
+                    InHwid.NetworkSignatures.Add(new HwNetworkSignature
                     {
-                        InHwid.NetworkSignatures.Add(new HwNetworkSignature
-                        {
-                            Id = (int) InHwid.NetworkSignatures.Count,
-                            ProfileGuid = (string) Registry.GetValue(Path.Combine(UnmanagedSignatures.Name, Subkey), "ProfileGuid", null),
-                            Name = (string) Registry.GetValue(Path.Combine(UnmanagedSignatures.Name, Subkey), "Description", null),
-                            DefaultGatewayMac = BitConverter.ToString((byte[]) Registry.GetValue(Path.Combine(UnmanagedSignatures.Name, Subkey), "DefaultGatewayMac", Array.Empty<byte>()))?.Replace('-', ':')
-                        });
-                    }
+                        Id = InHwid.NetworkSignatures.Count,
+                        ProfileGuid = Signature.GetValue("ProfileGuid") as string,
+                        Name = Signature.GetValue("Description") as string,
+                        DefaultGatewayMac = Signature.GetValue("DefaultGatewayMac") is byte[] GatewayMac ? FormatMacAddress(GatewayMac) : string.Empty,
+                    });
                 }
             }
             catch (Exception)

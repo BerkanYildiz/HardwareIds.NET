@@ -14,25 +14,25 @@
         /// Gets or sets the interface.
         /// </summary>
         [JsonPropertyName("interface")]
-        public string Interface { get; set; }
+        public string? Interface { get; set; }
 
         /// <summary>
         /// Gets or sets the model.
         /// </summary>
         [JsonPropertyName("model")]
-        public string Model { get; set; }
+        public string? Model { get; set; }
 
         /// <summary>
         /// Gets or sets the serial number.
         /// </summary>
         [JsonPropertyName("serial_number")]
-        public string SerialNumber { get; set; }
+        public string? SerialNumber { get; set; }
 
         /// <summary>
         /// Gets or sets the capacity
         /// </summary>
         [JsonPropertyName("capacity")]
-        public string Capacity { get; set; }
+        public string? Capacity { get; set; }
 
         /// <summary>
         /// Gets or sets the number of partitions.

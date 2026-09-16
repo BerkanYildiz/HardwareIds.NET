@@ -33,9 +33,9 @@
 
                     if (NetworkAdapter.NetEnabled)
                     {
-                        if (DeviceIoControl.Exists($@"\\.\{NetworkAdapter.Guid}"))
+                        if (DeviceIoControl.Exists($@"\.\{NetworkAdapter.Guid}"))
                         {
-                            var DeviceIo = new DeviceIoControl($@"\\.\{NetworkAdapter.Guid}");
+                            var DeviceIo = new DeviceIoControl($@"\.\{NetworkAdapter.Guid}");
 
                             { DeviceIo.Connect();
                                 {
@@ -45,7 +45,7 @@
                                     unsafe { fixed (byte* OutputBuffer = OutputValue) { WasCallSuccessful = DeviceIo.TryIoControl(0x170002, &InputValue, 4, OutputBuffer, 6); } }
 
                                     if (WasCallSuccessful)
-                                        Entry.Address.Current = string.Join(":", OutputValue.Select(T => T.ToString("X2")));
+                                        Entry.Address.Current = FormatMacAddress(OutputValue);
                                 }
 
                                 {
@@ -55,7 +55,7 @@
                                     unsafe { fixed (byte* OutputBuffer = OutputValue) { WasCallSuccessful = DeviceIo.TryIoControl(0x170002, &InputValue, 4, OutputBuffer, 6); } }
 
                                     if (WasCallSuccessful)
-                                        Entry.Address.Permanent = string.Join(":", OutputValue.Select(T => T.ToString("X2")));
+                                        Entry.Address.Permanent = FormatMacAddress(OutputValue);
                                 }
                             } DeviceIo.Close();
                         }

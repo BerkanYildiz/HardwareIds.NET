@@ -17,7 +17,7 @@
                 {
                     InHwid.VideoControllers.Add(new HwVideo
                     {
-                        Id = (int) InHwid.VideoControllers.Count,
+                        Id = InHwid.VideoControllers.Count,
                         Name = VideoController.Name,
                         Width = VideoController.CurrentHorizontalResolution,
                         Height = VideoController.CurrentVerticalResolution,

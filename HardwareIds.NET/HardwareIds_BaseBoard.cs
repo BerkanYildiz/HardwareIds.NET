@@ -17,7 +17,7 @@
                 {
                     InHwid.Baseboards.Add(new HwBaseboard
                     {
-                        Id = (int) InHwid.Baseboards.Count,
+                        Id = InHwid.Baseboards.Count,
                         Manufacturer = Baseboard.Manufacturer,
                         Model = Baseboard.Product,
                         Version = Baseboard.Version,

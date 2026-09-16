@@ -1,6 +1,7 @@
 ﻿namespace HardwareIds.NET
 {
     using System.Collections.Generic;
+    using System.Linq;
     using System.Runtime.InteropServices;
     using System.Threading;
     using System.Threading.Tasks;
@@ -15,14 +16,14 @@
         /// <param name="InConfig">The configuration.</param>
         /// <param name="InCancellationToken">The cancellation token.</param>
     #if NET
-        public static async ValueTask<Hwid> GetHwidAsync(HardwareIdsConfig InConfig = null, CancellationToken InCancellationToken = default)
+        public static async ValueTask<Hwid> GetHwidAsync(HardwareIdsConfig? InConfig = null, CancellationToken InCancellationToken = default)
     #else
-        public static async Task<Hwid> GetHwidAsync(HardwareIdsConfig InConfig = null, CancellationToken InCancellationToken = default)
+        public static async Task<Hwid> GetHwidAsync(HardwareIdsConfig? InConfig = null, CancellationToken InCancellationToken = default)
     #endif
         {
             var Hwid = new Hwid();
             var HwidTasks = new List<Task>();
-            InConfig = InConfig ?? new HardwareIdsConfig();
+            InConfig ??= new HardwareIdsConfig();
 
             // 
             // Retrieve the WI-FI endpoints currently available around the computer.
@@ -171,9 +172,22 @@
         /// </summary>
         /// <param name="InConfig">The configuration.</param>
         /// <param name="InCancellationToken">The cancellation token.</param>
-        public static Hwid GetHwid(HardwareIdsConfig InConfig = null, CancellationToken InCancellationToken = default)
+        public static Hwid GetHwid(HardwareIdsConfig? InConfig = null, CancellationToken InCancellationToken = default)
         {
+        #if NET
+            return GetHwidAsync(InConfig, InCancellationToken).AsTask().GetAwaiter().GetResult();
+        #else
             return GetHwidAsync(InConfig, InCancellationToken).GetAwaiter().GetResult();
+        #endif
+        }
+
+        /// <summary>
+        /// Formats the raw bytes of a MAC address as a colon-separated, upper-case hexadecimal string.
+        /// </summary>
+        /// <param name="InAddress">The raw bytes of the MAC address.</param>
+        private static string FormatMacAddress(IEnumerable<byte> InAddress)
+        {
+            return string.Join(":", InAddress.Select(T => T.ToString("X2")));
         }
 
         [DllImport("iphlpapi.dll", ExactSpelling = true)]

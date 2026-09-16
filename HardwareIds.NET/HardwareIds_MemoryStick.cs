@@ -17,7 +17,7 @@
                 {
                     InHwid.MemorySticks.Add(new HwMemoryStick
                     {
-                        Id = (int) InHwid.MemorySticks.Count,
+                        Id = InHwid.MemorySticks.Count,
                         Manufacturer = MemoryStick.Manufacturer,
                         Capacity = (MemoryStick.Capacity / 1024 / 1024 / 1024) + " GB",
                         ClockSpeed = $"{MemoryStick.ConfiguredClockSpeed} MHz",

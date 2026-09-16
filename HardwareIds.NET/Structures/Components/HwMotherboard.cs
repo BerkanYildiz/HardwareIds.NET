@@ -15,19 +15,19 @@
         /// Gets or sets the name.
         /// </summary>
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         /// <summary>
         /// Gets or sets the vendor.
         /// </summary>
         [JsonPropertyName("vendor")]
-        public string Vendor { get; set; }
+        public string? Vendor { get; set; }
 
         /// <summary>
         /// Gets or sets the version.
         /// </summary>
         [JsonPropertyName("version")]
-        public string Version { get; set; }
+        public string? Version { get; set; }
 
         /// <summary>
         /// Gets or sets the UUID.

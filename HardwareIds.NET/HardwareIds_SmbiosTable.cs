@@ -15,18 +15,17 @@
         {
             try
             {
+                using var Hasher = SHA256.Create();
+
                 foreach (var SmbiosTable in SmBiosRawSmBiosTables.Retrieve())
                 {
-                    using (var Hasher = SHA256.Create())
+                    InHwid.SmbiosTables.Add(new HwSmbios
                     {
-                        InHwid.SmbiosTables.Add(new HwSmbios
-                        {
-                            Id = (int) InHwid.SmbiosTables.Count,
-                            Version = $"{SmbiosTable.SmbiosMajorVersion}.{SmbiosTable.SmbiosMinorVersion}.{SmbiosTable.DmiRevision}",
-                            Hash = string.Join(string.Empty, Hasher.ComputeHash(SmbiosTable.SmBiosData).Select(T => T.ToString("x2"))),
-                            Length = SmbiosTable.Size,
-                        });
-                    }
+                        Id = InHwid.SmbiosTables.Count,
+                        Version = $"{SmbiosTable.SmbiosMajorVersion}.{SmbiosTable.SmbiosMinorVersion}.{SmbiosTable.DmiRevision}",
+                        Hash = string.Concat(Hasher.ComputeHash(SmbiosTable.SmBiosData).Select(T => T.ToString("x2"))),
+                        Length = SmbiosTable.Size,
+                    });
                 }
             }
             catch (Exception)

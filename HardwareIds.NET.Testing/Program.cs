@@ -53,7 +53,8 @@
                 Console.WriteLine();
             }
 
-            Console.ReadKey(true);
+            if (!Console.IsInputRedirected)
+                Console.ReadKey(true);
         }
     }
 }

@@ -19,7 +19,7 @@
 
             foreach (var Interface in Interfaces)
             {
-                var Entry = new HwRouter() { Id = InHwid.Routers.Count };
+                var Entry = new HwRouter { Id = InHwid.Routers.Count };
                 var IpProperties = Interface.GetIPProperties();
 
                 // 
@@ -27,7 +27,7 @@
                 // 
 
                 foreach (var GatewayAddress in IpProperties.GatewayAddresses.Where(T => T.Address.AddressFamily == AddressFamily.InterNetwork))
-                    Entry.Gateways.Add(new HwNetworkDevice() { Address = GatewayAddress.Address, MacAddress = null });
+                    Entry.Gateways.Add(new HwNetworkDevice { Address = GatewayAddress.Address, MacAddress = null });
 
                 foreach (var DnsAddress in IpProperties.DnsAddresses.Where(T => T.AddressFamily == AddressFamily.InterNetwork || T.AddressFamily == AddressFamily.InterNetworkV6))
                     Entry.DnsServers.Add(DnsAddress.ToString());
@@ -54,19 +54,22 @@
                                 var MacAddress = new byte[6];
                                 var DhcpAddress = string.Join(".", IpSections[0], IpSections[1], IpSections[2], DhcpIndex);
                                 var IpAddress = IPAddress.Parse(DhcpAddress);
-                                var DhcpStatus = SendARP((uint) IpAddress.Address, 0, MacAddress, ref MacAddressLength);
+                                var DhcpStatus = SendARP(BitConverter.ToUInt32(IpAddress.GetAddressBytes(), 0), 0, MacAddress, ref MacAddressLength);
 
                                 if (DhcpStatus == 0)
                                 {
-                                    var Gateway = Entry.Gateways.FirstOrDefault(T => T.Address.Equals(IpAddress));
+                                    lock (Entry)
+                                    {
+                                        var Gateway = Entry.Gateways.FirstOrDefault(T => IpAddress.Equals(T.Address));
 
-                                    if (Gateway != null)
-                                    {
-                                        Gateway.MacAddress = string.Join(":", MacAddress.Select(T => T.ToString("X2")));
-                                    }
-                                    else
-                                    {
-                                        Entry.NetworkDevices.Add(new HwNetworkDevice() { Address = IpAddress, MacAddress = string.Join(":", MacAddress.Select(T => T.ToString("X2"))) });
+                                        if (Gateway != null)
+                                        {
+                                            Gateway.MacAddress = FormatMacAddress(MacAddress);
+                                        }
+                                        else
+                                        {
+                                            Entry.NetworkDevices.Add(new HwNetworkDevice { Address = IpAddress, MacAddress = FormatMacAddress(MacAddress) });
+                                        }
                                     }
                                 }
                             });

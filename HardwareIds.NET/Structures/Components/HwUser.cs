@@ -15,25 +15,25 @@
         /// Gets or sets the username.
         /// </summary>
         [JsonPropertyName("username")]
-        public string Username { get; set; }
+        public string? Username { get; set; }
 
         /// <summary>
         /// Gets or sets the full name.
         /// </summary>
         [JsonPropertyName("full_name")]
-        public string FullName { get; set; }
+        public string? FullName { get; set; }
 
         /// <summary>
         /// Gets or sets the SID.
         /// </summary>
         [JsonPropertyName("sid")]
-        public string SID { get; set; }
+        public string? SID { get; set; }
 
         /// <summary>
         /// Gets or sets the domain.
         /// </summary>
         [JsonPropertyName("domain")]
-        public string Domain { get; set; }
+        public string? Domain { get; set; }
 
         /// <summary>
         /// Gets or sets the install date.

@@ -2,7 +2,6 @@
 {
     using System;
     using System.Collections.Generic;
-    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -18,49 +17,48 @@
             // 
             // Scan for the available WI-FI endpoints around this computer.
             // 
-            
-            var NeighborEndpoints = (IEnumerable<Guid>) null;
 
-            using (var WifiScanCancellationSource = new CancellationTokenSource(InTimeout.GetValueOrDefault(TimeSpan.FromSeconds(7))))
+            var ScanTimeout = InTimeout.GetValueOrDefault(TimeSpan.FromSeconds(7));
+            var NeighborEndpoints = (IEnumerable<Guid>?) null;
+
+            using (var WifiScanCancellationSource = new CancellationTokenSource(ScanTimeout))
+            using (var LinkedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(InCancellationToken, WifiScanCancellationSource.Token))
             {
-                using (var LinkedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(InCancellationToken, WifiScanCancellationSource.Token))
-                {
-                    try { NeighborEndpoints = await NativeWifi.ScanNetworksAsync(InTimeout.GetValueOrDefault(TimeSpan.FromSeconds(7)), LinkedCancellationSource.Token); }
-                    catch { }
-                }
+                try { NeighborEndpoints = await NativeWifi.ScanNetworksAsync(ScanTimeout, LinkedCancellationSource.Token).ConfigureAwait(false); }
+                catch { }
             }
 
             // 
             // Retrieve every available WI-FI endpoints that have been previously scanned.
             // 
 
-            if (NeighborEndpoints != null)
+            if (NeighborEndpoints is null)
+                return;
+
+            var AvailableEndpoints = (IEnumerable<BssNetworkPack>?) null;
+            try { AvailableEndpoints = NativeWifi.EnumerateBssNetworks(); }
+            catch { }
+
+            if (AvailableEndpoints is null)
+                return;
+
+            // 
+            // For each available WIFI endpoint...
+            // 
+
+            foreach (var Wifi in AvailableEndpoints)
             {
-                var AvailableEndpoints = (IEnumerable<BssNetworkPack>) null;
-                try { AvailableEndpoints = NativeWifi.EnumerateBssNetworks(); }
-                catch { }
-
-                // 
-                // For each available WIFI endpoint...
-                // 
-
-                if (AvailableEndpoints != null)
+                InHwid.Wifis.Add(new HwWifi
                 {
-                    foreach (var Wifi in AvailableEndpoints)
-                    {
-                        InHwid.Wifis.Add(new HwWifi
-                        {
-                            Id = (int) InHwid.Wifis.Count,
-                            Ssid = Wifi.Ssid.ToString(),
-                            Bssid = string.Join(":", Wifi.Bssid.ToBytes().Select(T => T.ToString("X2"))),
-                            Strength = Wifi.Rssi,
-                            Channel = Wifi.Channel,
-                            Frequency = Wifi.Frequency,
-                            Band = Wifi.Band,
-                            Quality = Wifi.LinkQuality,
-                        });
-                    }
-                }
+                    Id = InHwid.Wifis.Count,
+                    Ssid = Wifi.Ssid.ToString(),
+                    Bssid = FormatMacAddress(Wifi.Bssid.ToBytes()),
+                    Strength = Wifi.Rssi,
+                    Channel = Wifi.Channel,
+                    Frequency = Wifi.Frequency,
+                    Band = Wifi.Band,
+                    Quality = Wifi.LinkQuality,
+                });
             }
         }
     }

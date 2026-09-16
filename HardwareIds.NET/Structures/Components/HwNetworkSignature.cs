@@ -14,18 +14,18 @@
         /// Gets or sets the profile GUID.
         /// </summary>
         [JsonPropertyName("profile_guid")]
-        public string ProfileGuid { get; set; }
+        public string? ProfileGuid { get; set; }
 
         /// <summary>
         /// Gets or sets the name.
         /// </summary>
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         /// <summary>
         /// Gets or sets the default gateway mac address.
         /// </summary>
         [JsonPropertyName("gateway_address")]
-        public string DefaultGatewayMac { get; set; }
+        public string? DefaultGatewayMac { get; set; }
     }
 }

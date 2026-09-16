@@ -17,7 +17,7 @@
                 {
                     InHwid.Motherboards.Add(new HwMotherboard
                     {
-                        Id = (int) InHwid.Motherboards.Count,
+                        Id = InHwid.Motherboards.Count,
                         Name = Motherboard.Name,
                         Vendor = Motherboard.Vendor,
                         Version = Motherboard.Version,

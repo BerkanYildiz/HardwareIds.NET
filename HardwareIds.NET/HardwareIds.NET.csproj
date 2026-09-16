@@ -1,37 +1,41 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>net48;net9.0</TargetFrameworks>
+    <TargetFrameworks>net48;net10.0</TargetFrameworks>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <PropertyGroup>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <PackageRequireLicenseAcceptance>false</PackageRequireLicenseAcceptance>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <Copyright>Copyright © 2025</Copyright>
+    <Copyright>Copyright © 2026</Copyright>
     <Company />
     <Authors>Berkan YILDIZ</Authors>
+    <PackageProjectUrl>https://github.com/BerkanYildiz/HardwareIds.NET</PackageProjectUrl>
     <RepositoryUrl>https://github.com/BerkanYildiz/HardwareIds.NET</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <Description>Simple .NET library capable of tracking users across re-installs and hardware components swapping, and even entirely new computer using the neighborhood's network endpoints.</Description>
     <PackageTags>hwid, tracker, track, tracking, hardware, id, hardwareid, hardwareids, hwids, hardwares, identifier, identifiers, scan, network, query, serial, number, serialnumber</PackageTags>
-    <Version>1.1.12</Version>
-    <PackageReleaseNotes></PackageReleaseNotes>
+    <Version>1.2.0</Version>
+    <PackageReleaseNotes>Targets .NET 10 and .NET Framework 4.8, enables nullable reference types, updates dependencies.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Driver.NET.DeviceIoControl" Version="2.3.4" />
     <PackageReference Include="ManagedNativeWifi" Version="3.0.2" />
-    <PackageReference Include="System.Management" Version="9.0.8" />
-    <PackageReference Include="System.Text.Json" Version="9.0.8" />
+    <PackageReference Include="System.Management" Version="10.0.12" />
     <PackageReference Include="WindowsMonitor.Standard" Version="4.2.0" />
-    <PackageReference Include="Microsoft.Win32.Registry" Version="5.0.0" Condition="'$(TargetFramework)' == 'net9.0'" />
+    <PackageReference Include="System.Text.Json" Version="10.0.12" Condition="'$(TargetFramework)' == 'net48'" />
   </ItemGroup>
 
-	<ItemGroup>
-		<None Include="..\README.md">
-			<Pack>True</Pack>
-			<PackagePath>\</PackagePath>
-		</None>
-    </ItemGroup>
+  <ItemGroup>
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
 
 </Project>

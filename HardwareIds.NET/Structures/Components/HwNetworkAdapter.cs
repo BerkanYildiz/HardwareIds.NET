@@ -21,25 +21,25 @@
         /// Gets or sets the name.
         /// </summary>
         [JsonPropertyName("name")]
-        public string Name { get; set; }
+        public string? Name { get; set; }
 
         /// <summary>
         /// Gets or sets the interface guid.
         /// </summary>
         [JsonPropertyName("interface_guid")]
-        public string InterfaceGuid { get; set; }
+        public string? InterfaceGuid { get; set; }
 
         /// <summary>
         /// Gets or sets the service name.
         /// </summary>
         [JsonPropertyName("service_name")]
-        public string ServiceName { get; set; }
+        public string? ServiceName { get; set; }
 
         /// <summary>
         /// Gets or sets the MAC addresses.
         /// </summary>
         [JsonPropertyName("address")]
-        public HwNetworkAddress Address { get; set; } = new HwNetworkAddress();
+        public HwNetworkAddress Address { get; set; } = new();
 
         /// <summary>
         /// Gets or sets a value indicating whether this network adapter is physical or not.
@@ -66,12 +66,12 @@
         /// Gets or sets the current MAC address.
         /// </summary>
         [JsonPropertyName("current")]
-        public string Current { get; set; }
+        public string? Current { get; set; }
 
         /// <summary>
         /// Gets or sets the permanent MAC address.
         /// </summary>
         [JsonPropertyName("permanent")]
-        public string Permanent { get; set; }
+        public string? Permanent { get; set; }
     }
 }

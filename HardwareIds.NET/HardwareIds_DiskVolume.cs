@@ -17,7 +17,7 @@
                 {
                     InHwid.Volumes.Add(new HwVolume
                     {
-                        Id = (int) InHwid.Volumes.Count,
+                        Id = InHwid.Volumes.Count,
                         Path = Volume.DeviceId,
                         Letter = Volume.DriveLetter,
                         SerialNumber = Volume.SerialNumber,

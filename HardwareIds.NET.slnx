@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="HardwareIds.NET.Testing/HardwareIds.NET.Testing.csproj" />
+  <Project Path="HardwareIds.NET/HardwareIds.NET.csproj" />
+</Solution>

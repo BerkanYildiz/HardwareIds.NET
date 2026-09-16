@@ -17,7 +17,7 @@
                 {
                     InHwid.Printers.Add(new HwPrinter
                     {
-                        Id = (int) InHwid.Printers.Count,
+                        Id = InHwid.Printers.Count,
                         Name = Printer.Name,
                         PortName = Printer.PortName,
                         Location = Printer.Location,
