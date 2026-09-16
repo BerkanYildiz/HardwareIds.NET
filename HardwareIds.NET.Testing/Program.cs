@@ -1,5 +1,7 @@
 ﻿namespace HardwareIds.NET.Testing
 {
+    using System.Text.Json;
+
     internal static class Program
     {
         /// <summary>
@@ -52,6 +54,8 @@
                 Console.WriteLine($"  WIFI->BSSID:     {Wifi.Bssid}");
                 Console.WriteLine();
             }
+
+            await File.WriteAllTextAsync("hwid.json", JsonSerializer.Serialize(Hwid));
 
             if (!Console.IsInputRedirected)
                 Console.ReadKey(true);

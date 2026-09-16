@@ -2,28 +2,36 @@
 {
     using System;
 
+    using global::HardwareIds.NET.Native;
     using global::HardwareIds.NET.Structures;
     using global::HardwareIds.NET.Structures.Components;
 
-    using WindowsMonitor.Hardware.Video;
-
     public static partial class HardwareIds
     {
-        private static void RetrieveVideoControllers(Hwid InHwid)
+        internal static void RetrieveVideoControllers(Hwid InHwid)
         {
             try
             {
-                foreach (var VideoController in Win32VideoController.Retrieve())
+                var DisplayModes = User32.GetActiveDisplayModes();
+
+                foreach (var InstanceId in CfgMgr32.GetDeviceIds(CfgMgr32.GUID_DEVCLASS_DISPLAY))
                 {
+                    var DevNode = CfgMgr32.LocateDevNode(InstanceId);
+
+                    if (DevNode is null)
+                        continue;
+
+                    DisplayModes.TryGetValue(InstanceId, out var Mode);
+
                     InHwid.VideoControllers.Add(new HwVideo
                     {
                         Id = InHwid.VideoControllers.Count,
-                        Name = VideoController.Name,
-                        Width = VideoController.CurrentHorizontalResolution,
-                        Height = VideoController.CurrentVerticalResolution,
-                        RefreshRate = VideoController.CurrentRefreshRate,
-                        DriverDate = VideoController.DriverDate,
-                        DriverVersion = VideoController.DriverVersion,
+                        Name = CfgMgr32.GetDevNodeProperty(DevNode.Value, CfgMgr32.DEVPKEY_Device_DeviceDesc),
+                        Width = Mode?.Width ?? 0,
+                        Height = Mode?.Height ?? 0,
+                        RefreshRate = Mode?.RefreshRate ?? 0,
+                        DriverDate = CfgMgr32.GetDevNodeDateProperty(DevNode.Value, CfgMgr32.DEVPKEY_Device_DriverDate) ?? default,
+                        DriverVersion = CfgMgr32.GetDevNodeProperty(DevNode.Value, CfgMgr32.DEVPKEY_Device_DriverVersion),
                     });
                 }
             }

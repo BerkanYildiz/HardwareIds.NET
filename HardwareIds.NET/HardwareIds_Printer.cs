@@ -2,18 +2,17 @@
 {
     using System;
 
+    using global::HardwareIds.NET.Native;
     using global::HardwareIds.NET.Structures;
     using global::HardwareIds.NET.Structures.Components;
 
-    using WindowsMonitor.Hardware.Printers;
-
     public static partial class HardwareIds
     {
-        private static void RetrievePrinters(Hwid InHwid)
+        internal static void RetrievePrinters(Hwid InHwid)
         {
             try
             {
-                foreach (var Printer in Win32Printer.Retrieve())
+                foreach (var Printer in WinSpool.GetPrinters())
                 {
                     InHwid.Printers.Add(new HwPrinter
                     {

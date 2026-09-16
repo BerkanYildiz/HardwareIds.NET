@@ -9,7 +9,7 @@
 
     public static partial class HardwareIds
     {
-        private static void RetrieveNetworkSignatures(Hwid InHwid)
+        internal static void RetrieveNetworkSignatures(Hwid InHwid)
         {
             try
             {

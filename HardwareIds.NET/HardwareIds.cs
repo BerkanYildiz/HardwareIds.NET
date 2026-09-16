@@ -2,10 +2,10 @@
 {
     using System.Collections.Generic;
     using System.Linq;
-    using System.Runtime.InteropServices;
     using System.Threading;
     using System.Threading.Tasks;
 
+    using global::HardwareIds.NET.Native;
     using global::HardwareIds.NET.Structures;
 
     public static partial class HardwareIds
@@ -24,6 +24,21 @@
             var Hwid = new Hwid();
             var HwidTasks = new List<Task>();
             InConfig ??= new HardwareIdsConfig();
+
+            // 
+            // Read the SMBIOS table once; the baseboard, system, BIOS, processor and memory collectors are all built from it.
+            // 
+
+            SmbiosTable? Smbios = null;
+
+            try
+            {
+                Smbios = SmbiosTable.Read();
+            }
+            catch
+            {
+                // ...
+            }
 
             // 
             // Retrieve the WI-FI endpoints currently available around the computer.
@@ -72,42 +87,42 @@
             // 
 
             if (!InCancellationToken.IsCancellationRequested)
-                RetrieveBaseBoards(Hwid);
+                RetrieveBaseBoards(Hwid, Smbios);
 
             // 
             // Retrieve the motherboard(s) installed on this computer.
             // 
 
             if (!InCancellationToken.IsCancellationRequested)
-                RetrieveMotherBoards(Hwid);
+                RetrieveMotherBoards(Hwid, Smbios);
 
             // 
             // Retrieve the BIOS firmwares installed on this computer's motherboard(s).
             // 
 
             if (!InCancellationToken.IsCancellationRequested)
-                RetrieveFirmwares(Hwid);
+                RetrieveFirmwares(Hwid, Smbios);
 
             // 
             // Retrieve the SMBIOS Table(s) configured on this computer's motherboard's bios(es).
             // 
 
             if (!InCancellationToken.IsCancellationRequested)
-                RetrieveSmbiosTables(Hwid);
+                RetrieveSmbiosTables(Hwid, Smbios);
 
             // 
             // Retrieve the processor(s) installed on this computer's motherboard(s).
             // 
 
             if (!InCancellationToken.IsCancellationRequested)
-                RetrieveProcessors(Hwid);
+                RetrieveProcessors(Hwid, Smbios);
 
             // 
             // Retrieve the memory sticks installed on this computer's motherboard(s).
             // 
 
             if (!InCancellationToken.IsCancellationRequested)
-                RetrieveMemorySticks(Hwid);
+                RetrieveMemorySticks(Hwid, Smbios);
 
             // 
             // Retrieve the monitors plugged into this computer.
@@ -185,12 +200,9 @@
         /// Formats the raw bytes of a MAC address as a colon-separated, upper-case hexadecimal string.
         /// </summary>
         /// <param name="InAddress">The raw bytes of the MAC address.</param>
-        private static string FormatMacAddress(IEnumerable<byte> InAddress)
+        internal static string FormatMacAddress(IEnumerable<byte> InAddress)
         {
             return string.Join(":", InAddress.Select(T => T.ToString("X2")));
         }
-
-        [DllImport("iphlpapi.dll", ExactSpelling = true)]
-        private static extern int SendARP(uint DestinationIp, uint SourceIp, byte[] MacAddress, ref int MacAddressLength);
     }
 }

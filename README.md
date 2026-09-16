@@ -11,9 +11,16 @@ by scanning network endpoints (WiFi) and routers available that are transmitting
 This library will also take care of scanning the current network (WiFi/Ethernet) the computer is connected to,  
 and retrieve the MAC address of every device connected, like printers, Smart TVs, phones, etc...  
 
+Everything is read straight from the Windows APIs, without WMI: the SMBIOS table (`GetSystemFirmwareTable`),  
+storage and NDIS device IOCTLs, the PnP configuration manager, the EDID blocks of the monitors, the registry,  
+`NetUserEnum`, the print spooler, the display configuration API and the native Wi-Fi API (WlanAPI). A full scan (without the network scans)  
+takes about 10 ms, does not need administrator rights, does not depend on the WMI service, and the library has no third-party dependencies.
+
+The values returned are the same ones WMI reports, so identifiers collected with previous versions keep matching.
+
 ## Requirements
 
-- Windows (the library relies on WMI, the registry and the native Wi-Fi API).
+- Windows (the library relies on the SMBIOS table, the PnP manager, the registry and the native Wi-Fi API).
 - .NET 10 or .NET Framework 4.8.
 
 ## Installation
@@ -45,6 +52,14 @@ foreach (var Disk in Hwid.Disks)
 // The result can be serialized as-is with System.Text.Json.
 var Json = JsonSerializer.Serialize(Hwid);
 ```
+
+## Tests
+
+The `HardwareIds.NET.Tests` project holds unit tests for the SMBIOS and EDID parsers (using synthetic tables) and integration tests that run every collector on the local machine and compare the results with WMI. Run them with:
+
+    dotnet test
+
+Tests that depend on hardware or privileges that are missing (no Wi-Fi interface, no monitor EDID, non-elevated process) are skipped rather than failed.
 
 # Licence
 This work is licensed under the MIT License.

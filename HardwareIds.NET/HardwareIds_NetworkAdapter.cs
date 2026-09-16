@@ -1,73 +1,92 @@
 ﻿namespace HardwareIds.NET
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
 
-    using Driver.NET.DeviceIoControl;
-
+    using global::HardwareIds.NET.Native;
     using global::HardwareIds.NET.Structures;
     using global::HardwareIds.NET.Structures.Components;
 
-    using WindowsMonitor.Hardware.Network;
+    using Microsoft.Win32;
 
     public static partial class HardwareIds
     {
-        private static void RetrieveNetworkAdapters(Hwid InHwid)
+        internal static void RetrieveNetworkAdapters(Hwid InHwid)
         {
             try
             {
-                foreach (var NetworkAdapter in Win32NetworkAdapter.Retrieve().Where(T => T.Installed /* && T.NetEnabled */ && T.PhysicalAdapter).OrderBy(T => T.Index).ThenByDescending(T => T.PhysicalAdapter))
+                var Interfaces = IpHlpApi.GetInterfaces();
+                var Entries = new List<HwNetworkAdapter>();
+
+                // 
+                // The network class registry key holds one numbered subkey per adapter; that number is the index WMI reports.
+                // 
+
+                using var ClassKey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Class\" + CfgMgr32.GUID_DEVCLASS_NET.ToString("B").ToUpperInvariant());
+
+                if (ClassKey is null)
+                    return;
+
+                foreach (var SubkeyName in ClassKey.GetSubKeyNames())
                 {
-                    var Entry = new HwNetworkAdapter
-                    {
-                        Id = (int) NetworkAdapter.Index,
-                        InterfaceId = (int) NetworkAdapter.InterfaceIndex,
-                        Name = NetworkAdapter.ProductName,
-                        InterfaceGuid = NetworkAdapter.Guid,
-                        ServiceName = NetworkAdapter.ServiceName,
-                        IsPhysical = NetworkAdapter.PhysicalAdapter,
-                        IsEnabled = NetworkAdapter.NetEnabled,
-                        InstallDate = NetworkAdapter.InstallDate,
-                        Address = { Current = NetworkAdapter.MacAddress, Permanent = NetworkAdapter.PermanentAddress },
-                    };
+                    if (SubkeyName.Length != 4 || !int.TryParse(SubkeyName, out var Index))
+                        continue;
 
-                    if (NetworkAdapter.NetEnabled)
+                    using var AdapterKey = ClassKey.OpenSubKey(SubkeyName);
+
+                    if (AdapterKey?.GetValue("NetCfgInstanceId") is not string InterfaceGuidText || !Guid.TryParse(InterfaceGuidText, out var InterfaceGuid))
+                        continue;
+
+                    var Interface = Interfaces.FirstOrDefault(T => T.InterfaceGuid == InterfaceGuid);
+
+                    if (Interface is null || !Interface.IsHardware || Interface.Type == IpHlpApi.IF_TYPE_SOFTWARE_LOOPBACK)
+                        continue;
+
+                    var InstanceId = AdapterKey.GetValue("DeviceInstanceID") as string;
+                    var DevNode = InstanceId != null ? CfgMgr32.LocateDevNode(InstanceId) : null;
+
+                    Entries.Add(new HwNetworkAdapter
                     {
-                        if (DeviceIoControl.Exists($@"\.\{NetworkAdapter.Guid}"))
+                        Id = Index,
+                        InterfaceId = (int) Interface.InterfaceIndex,
+                        Name = AdapterKey.GetValue("DriverDesc") as string ?? Interface.Description,
+                        InterfaceGuid = InterfaceGuidText,
+                        ServiceName = DevNode != null ? CfgMgr32.GetDevNodeProperty(DevNode.Value, CfgMgr32.DEVPKEY_Device_Service) : null,
+                        IsPhysical = Interface.IsHardware,
+                        IsEnabled = Interface.IsAdminUp,
+                        InstallDate = GetNetworkAdapterInstallDate(AdapterKey, DevNode),
+                        Address =
                         {
-                            var DeviceIo = new DeviceIoControl($@"\.\{NetworkAdapter.Guid}");
-
-                            { DeviceIo.Connect();
-                                {
-                                    var InputValue = 0x01010101;
-                                    var OutputValue = new byte[6];
-                                    bool WasCallSuccessful;
-                                    unsafe { fixed (byte* OutputBuffer = OutputValue) { WasCallSuccessful = DeviceIo.TryIoControl(0x170002, &InputValue, 4, OutputBuffer, 6); } }
-
-                                    if (WasCallSuccessful)
-                                        Entry.Address.Current = FormatMacAddress(OutputValue);
-                                }
-
-                                {
-                                    var InputValue = 0x01010102;
-                                    var OutputValue = new byte[6];
-                                    bool WasCallSuccessful;
-                                    unsafe { fixed (byte* OutputBuffer = OutputValue) { WasCallSuccessful = DeviceIo.TryIoControl(0x170002, &InputValue, 4, OutputBuffer, 6); } }
-
-                                    if (WasCallSuccessful)
-                                        Entry.Address.Permanent = FormatMacAddress(OutputValue);
-                                }
-                            } DeviceIo.Close();
-                        }
-                    }
-
-                    InHwid.NetworkAdapters.Add(Entry);
+                            Current = Interface.PhysicalAddress != null ? FormatMacAddress(Interface.PhysicalAddress) : null,
+                            Permanent = Interface.PermanentPhysicalAddress != null ? FormatMacAddress(Interface.PermanentPhysicalAddress) : null,
+                        },
+                    });
                 }
+
+                InHwid.NetworkAdapters.AddRange(Entries.OrderBy(T => T.Id));
             }
             catch (Exception)
             {
                 // ...
             }
+        }
+
+        private static DateTime? GetNetworkAdapterInstallDate(RegistryKey InAdapterKey, uint? InDevNode)
+        {
+            if (InAdapterKey.GetValue("NetworkInterfaceInstallTimestamp") is long Timestamp && Timestamp > 0)
+            {
+                try
+                {
+                    return DateTime.FromFileTime(Timestamp);
+                }
+                catch (ArgumentException)
+                {
+                    // ...
+                }
+            }
+
+            return InDevNode != null ? CfgMgr32.GetDevNodeDateProperty(InDevNode.Value, CfgMgr32.DEVPKEY_Device_InstallDate) : null;
         }
     }
 }

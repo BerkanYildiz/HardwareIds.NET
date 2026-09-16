@@ -1,64 +1,67 @@
 ﻿namespace HardwareIds.NET
 {
     using System;
-    using System.Collections.Generic;
     using System.Threading;
     using System.Threading.Tasks;
 
+    using global::HardwareIds.NET.Native;
     using global::HardwareIds.NET.Structures;
     using global::HardwareIds.NET.Structures.Components;
 
-    using ManagedNativeWifi;
-
     public static partial class HardwareIds
     {
-        private static async Task ScanNetworkEndpointsAsync(Hwid InHwid, TimeSpan? InTimeout = null, CancellationToken InCancellationToken = default)
+        internal static async Task ScanNetworkEndpointsAsync(Hwid InHwid, TimeSpan? InTimeout = null, CancellationToken InCancellationToken = default)
         {
-            // 
-            // Scan for the available WI-FI endpoints around this computer.
-            // 
-
-            var ScanTimeout = InTimeout.GetValueOrDefault(TimeSpan.FromSeconds(7));
-            var NeighborEndpoints = (IEnumerable<Guid>?) null;
-
-            using (var WifiScanCancellationSource = new CancellationTokenSource(ScanTimeout))
-            using (var LinkedCancellationSource = CancellationTokenSource.CreateLinkedTokenSource(InCancellationToken, WifiScanCancellationSource.Token))
+            try
             {
-                try { NeighborEndpoints = await NativeWifi.ScanNetworksAsync(ScanTimeout, LinkedCancellationSource.Token).ConfigureAwait(false); }
-                catch { }
-            }
+                using var Session = WlanSession.Open();
 
-            // 
-            // Retrieve every available WI-FI endpoints that have been previously scanned.
-            // 
+                if (Session is null)
+                    return;
 
-            if (NeighborEndpoints is null)
-                return;
+                var Interfaces = Session.EnumerateInterfaces();
 
-            var AvailableEndpoints = (IEnumerable<BssNetworkPack>?) null;
-            try { AvailableEndpoints = NativeWifi.EnumerateBssNetworks(); }
-            catch { }
+                if (Interfaces.Count == 0)
+                    return;
 
-            if (AvailableEndpoints is null)
-                return;
+                // 
+                // Ask every wireless interface to scan for the WI-FI endpoints around this computer, and wait for them to finish.
+                // 
 
-            // 
-            // For each available WIFI endpoint...
-            // 
-
-            foreach (var Wifi in AvailableEndpoints)
-            {
-                InHwid.Wifis.Add(new HwWifi
+                try
                 {
-                    Id = InHwid.Wifis.Count,
-                    Ssid = Wifi.Ssid.ToString(),
-                    Bssid = FormatMacAddress(Wifi.Bssid.ToBytes()),
-                    Strength = Wifi.Rssi,
-                    Channel = Wifi.Channel,
-                    Frequency = Wifi.Frequency,
-                    Band = Wifi.Band,
-                    Quality = Wifi.LinkQuality,
-                });
+                    await Session.ScanAsync(Interfaces, InTimeout.GetValueOrDefault(TimeSpan.FromSeconds(7)), InCancellationToken).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+
+                // 
+                // Retrieve every WI-FI endpoint the interfaces have seen.
+                // 
+
+                foreach (var Interface in Interfaces)
+                {
+                    foreach (var Network in Session.GetNetworks(Interface))
+                    {
+                        InHwid.Wifis.Add(new HwWifi
+                        {
+                            Id = InHwid.Wifis.Count,
+                            Ssid = WlanSession.DecodeSsid(Network.Ssid),
+                            Bssid = FormatMacAddress(Network.Bssid),
+                            Strength = Network.Rssi,
+                            Channel = WlanApi.GetChannel(Network.FrequencyKHz),
+                            Frequency = (int) Network.FrequencyKHz,
+                            Band = WlanApi.GetBand(Network.FrequencyKHz),
+                            Quality = (int) Network.LinkQuality,
+                        });
+                    }
+                }
+            }
+            catch (Exception)
+            {
+                // ...
             }
         }
     }

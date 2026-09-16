@@ -2,27 +2,33 @@
 {
     using System;
 
+    using global::HardwareIds.NET.Native;
     using global::HardwareIds.NET.Structures;
     using global::HardwareIds.NET.Structures.Components;
 
-    using WindowsMonitor.Hardware.OnBoard;
-
     public static partial class HardwareIds
     {
-        private static void RetrieveBaseBoards(Hwid InHwid)
+        internal static void RetrieveBaseBoards(Hwid InHwid, SmbiosTable? InSmbios)
         {
             try
             {
-                foreach (var Baseboard in BaseBoard.Retrieve())
+                if (InSmbios is null)
+                    return;
+
+                // 
+                // SMBIOS type 2: Baseboard (or Module) Information.
+                // 
+
+                foreach (var Baseboard in InSmbios.OfType(2))
                 {
                     InHwid.Baseboards.Add(new HwBaseboard
                     {
                         Id = InHwid.Baseboards.Count,
-                        Manufacturer = Baseboard.Manufacturer,
-                        Model = Baseboard.Product,
-                        Version = Baseboard.Version,
-                        SerialNumber = Baseboard.SerialNumber,
-                        PartNumber = Baseboard.PartNumber,
+                        Manufacturer = Baseboard.GetString(0x04),
+                        Model = Baseboard.GetString(0x05),
+                        Version = Baseboard.GetString(0x06),
+                        SerialNumber = Baseboard.GetString(0x07),
+                        PartNumber = null,
                     });
                 }
             }
