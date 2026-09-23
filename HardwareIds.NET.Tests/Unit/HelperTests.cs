@@ -157,6 +157,19 @@
             Assert.Null(Empty.MainChassis);
             Assert.Null(Empty.BluetoothRadio);
             Assert.Null(Empty.Battery);
+            Assert.Null(Empty.Disk);
+            Assert.Null(Empty.Volume);
+            Assert.Null(Empty.NetworkAdapter);
+            Assert.Null(Empty.MemoryStick);
+            Assert.Null(Empty.NetworkSignature);
+
+            //
+            // Every list has a getter for its first entry.
+            //
+
+            var Lists = typeof(Hwid).GetProperties().Where(T => T.PropertyType.IsGenericType).Select(T => T.PropertyType.GetGenericArguments()[0]).ToList();
+            var Getters = typeof(Hwid).GetProperties().Where(T => !T.PropertyType.IsGenericType).Select(T => T.PropertyType).ToList();
+            Assert.Equal(Lists.OrderBy(T => T.Name), Getters.OrderBy(T => T.Name));
 
             var Populated = new Hwid();
             Populated.Processors.Add(new HwProcessor { Id = 0 });

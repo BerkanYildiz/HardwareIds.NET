@@ -24,6 +24,11 @@
                 Assert.Equal(Controller.Width == 0, Controller.Height == 0);
             });
 
+            //
+            // Headless sessions (CI runners, services) have no active display path, so the mode check only applies when there is one.
+            //
+
+            Assert.SkipWhen(Controllers.All(T => T.Width == 0), "No active display path in this session.");
             Assert.Contains(Controllers, T => T.Width > 0 && T.Height > 0 && T.RefreshRate > 0);
         }
 

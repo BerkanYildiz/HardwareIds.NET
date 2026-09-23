@@ -15,16 +15,34 @@
         public List<HwDisk> Disks { get; set; } = [];
 
         /// <summary>
+        /// Gets the main disk.
+        /// </summary>
+        [JsonIgnore]
+        public HwDisk? Disk => this.Disks?.FirstOrDefault();
+
+        /// <summary>
         /// Gets or sets the volumes.
         /// </summary>
         [JsonPropertyName("volumes")]
         public List<HwVolume> Volumes { get; set; } = [];
 
         /// <summary>
+        /// Gets the main volume.
+        /// </summary>
+        [JsonIgnore]
+        public HwVolume? Volume => this.Volumes?.FirstOrDefault();
+
+        /// <summary>
         /// Gets or sets the network adapters.
         /// </summary>
         [JsonPropertyName("network_adapters")]
         public List<HwNetworkAdapter> NetworkAdapters { get; set; } = [];
+
+        /// <summary>
+        /// Gets the main network adapter.
+        /// </summary>
+        [JsonIgnore]
+        public HwNetworkAdapter? NetworkAdapter => this.NetworkAdapters?.FirstOrDefault();
 
         /// <summary>
         /// Gets or sets the Bluetooth radios.
@@ -115,6 +133,12 @@
         /// </summary>
         [JsonPropertyName("memory_sticks")]
         public List<HwMemoryStick> MemorySticks { get; set; } = [];
+
+        /// <summary>
+        /// Gets the main memory stick.
+        /// </summary>
+        [JsonIgnore]
+        public HwMemoryStick? MemoryStick => this.MemorySticks?.FirstOrDefault();
 
         /// <summary>
         /// Gets or sets the batteries.
@@ -217,5 +241,11 @@
         /// </summary>
         [JsonPropertyName("network_signatures")]
         public List<HwNetworkSignature> NetworkSignatures { get; set; } = [];
+
+        /// <summary>
+        /// Gets the main network signature.
+        /// </summary>
+        [JsonIgnore]
+        public HwNetworkSignature? NetworkSignature => this.NetworkSignatures?.FirstOrDefault();
     }
 }

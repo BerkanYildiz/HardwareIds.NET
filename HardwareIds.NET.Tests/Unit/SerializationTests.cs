@@ -110,8 +110,15 @@
         {
             var Json = JsonSerializer.Serialize(BuildPopulatedHwid());
 
-            foreach (var Name in new[] { "\"baseboard\"", "\"motherboard\"", "\"main_chassis\"", "\"MainChassis\"", "\"bios_firmware\"", "\"smbios_table\"", "\"processor\"", "\"battery\"", "\"Battery\"", "\"bluetooth_radio\"", "\"BluetoothRadio\"", "\"monitor\"", "\"video_controller\"", "\"printer\"", "\"user\"", "\"operating_system\"", "\"wifi\"", "\"router\"", "\"Baseboard\"", "\"Processor\"" })
+            foreach (var Name in new[] { "\"baseboard\"", "\"motherboard\"", "\"main_chassis\"", "\"MainChassis\"", "\"bios_firmware\"", "\"smbios_table\"", "\"processor\"", "\"battery\"", "\"Battery\"", "\"bluetooth_radio\"", "\"BluetoothRadio\"", "\"monitor\"", "\"video_controller\"", "\"printer\"", "\"user\"", "\"operating_system\"", "\"wifi\"", "\"router\"", "\"Baseboard\"", "\"Processor\"", "\"disk\"", "\"volume\"", "\"network_adapter\"", "\"memory_stick\"", "\"network_signature\"" })
                 Assert.DoesNotContain(Name, Json);
+
+            //
+            // Only the list properties reach the JSON.
+            //
+
+            using var Document = JsonDocument.Parse(Json);
+            Assert.All(Document.RootElement.EnumerateObject(), T => Assert.Equal(JsonValueKind.Array, T.Value.ValueKind));
         }
 
         [Fact]

@@ -1,0 +1,80 @@
+name: Publish
+
+# Runs when a version tag is pushed (v2.0.0, v2.1.0-beta.1, ...): builds and tests the solution, packs the library
+# with the tag as its version, then pushes the package to NuGet.org and GitHub Packages and attaches it to a release.
+#
+# NuGet.org is reached through Trusted Publishing (OIDC): no API key is stored anywhere. The repository must have a
+# Trusted Publishing policy on nuget.org (profile > Trusted Publishing) with:
+#   Repository Owner: BerkanYildiz   Repository: HardwareIds.NET   Workflow File: publish.yml   Environment: (empty)
+# GitHub Packages uses the automatic GITHUB_TOKEN.
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-*'
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  NUGET_USER: BerkanYildiz   # nuget.org profile name that owns the Trusted Publishing policy (not the e-mail address)
+
+jobs:
+  publish:
+    name: Build, test and publish
+    runs-on: windows-latest
+
+    permissions:
+      contents: write   # create the GitHub release
+      packages: write   # push to GitHub Packages
+      id-token: write   # request the OIDC token exchanged for a short-lived nuget.org API key
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Derive the version from the tag
+        shell: pwsh
+        run: |
+          $Version = "${{ github.ref_name }}".TrimStart("v")
+          "VERSION=$Version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          Write-Host "Publishing version $Version"
+
+      - name: Restore
+        run: dotnet restore
+
+      - name: Build
+        run: dotnet build --configuration Release --no-restore -p:Version=${{ env.VERSION }} -p:ContinuousIntegrationBuild=true
+
+      - name: Test
+        run: dotnet test --configuration Release --no-build
+
+      - name: Pack
+        run: dotnet pack HardwareIds.NET/HardwareIds.NET.csproj --configuration Release --no-build --output artifacts -p:Version=${{ env.VERSION }} -p:ContinuousIntegrationBuild=true
+
+      # The temporary key lives one hour, so it is requested right before the push.
+      - name: NuGet login (OIDC to temporary API key)
+        id: login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ env.NUGET_USER }}
+
+      - name: Push to NuGet.org
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+
+      - name: Push to GitHub Packages
+        run: dotnet nuget push "artifacts/*.nupkg" --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --skip-duplicate --no-symbols
+
+      - name: Create the GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: artifacts/*
+          generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
