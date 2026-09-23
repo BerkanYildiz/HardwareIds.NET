@@ -28,7 +28,8 @@
                     return;
 
                 // 
-                // WMI takes the vendor, the name and the clock speed from the registry (the CPUID strings and the boot-time calibration), and the identifier from CPUID itself.
+                // WMI takes the vendor, the name and the clock speed from the registry (the CPUID strings and the boot-time calibration), and the
+                // identifier from the SMBIOS record (which hypervisors may leave zeroed). CPUID is only used when the record has no identifier.
                 // 
 
                 string? RegistryName;
@@ -58,7 +59,7 @@
                         Id = Index,
                         Manufacturer = RegistryVendor ?? Processor.GetString(0x07),
                         Model = RegistryName ?? Processor.GetString(0x10)?.Trim(),
-                        ModelNumber = CpuId ?? FormatProcessorId(Processor.GetBytes(0x08, 8)),
+                        ModelNumber = FormatProcessorId(Processor.GetBytes(0x08, 8)) ?? CpuId,
                         Socket = Processor.GetString(0x04),
                         SerialNumber = Processor.GetString(0x20),
                         PartNumber = Processor.GetString(0x22),

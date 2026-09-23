@@ -23,7 +23,7 @@
             Assert.All(Adapters, Adapter =>
             {
                 Assert.True(Adapter.Id >= 0);
-                Assert.True(Adapter.InterfaceId > 0);
+                Assert.True(Adapter.InterfaceId > 0 || !Adapter.IsEnabled, "An enabled adapter has a network interface.");
                 Assert.False(string.IsNullOrWhiteSpace(Adapter.Name));
                 Assert.Matches("^\\{[0-9A-F-]{36}\\}$", Adapter.InterfaceGuid);
                 Assert.True(Adapter.IsPhysical);
@@ -42,9 +42,16 @@
             var Adapters = HwidFixture.Hwid.NetworkAdapters;
             Assert.SkipWhen(Adapters.Count == 0, "No physical network adapter on this machine.");
 
-            var Interfaces = NetworkInterface.GetAllNetworkInterfaces();
+            //
+            // .NET Framework only lists some of the interfaces (disconnected adapters are missing), so compare the ones both sides know.
+            //
 
-            foreach (var Adapter in Adapters)
+            var Interfaces = NetworkInterface.GetAllNetworkInterfaces();
+            var Known = Adapters.Where(Adapter => Interfaces.Any(T => string.Equals(T.Id, Adapter.InterfaceGuid, StringComparison.OrdinalIgnoreCase))).ToList();
+
+            Assert.SkipWhen(Known.Count == 0, "The network interface API lists none of the physical adapters.");
+
+            foreach (var Adapter in Known)
             {
                 var Interface = Assert.Single(Interfaces, T => string.Equals(T.Id, Adapter.InterfaceGuid, StringComparison.OrdinalIgnoreCase));
                 var Address = Interface.GetPhysicalAddress().GetAddressBytes();
@@ -70,8 +77,10 @@
                 Assert.Equal(Row.GetString("GUID"), Adapter.InterfaceGuid);
                 Assert.Equal(Row.GetString("ProductName"), Adapter.Name);
                 Assert.Equal(Wmi.Normalize(Row.GetString("ServiceName")), Wmi.Normalize(Adapter.ServiceName));
-                Assert.Equal((int) Row.GetNumber("InterfaceIndex"), Adapter.InterfaceId);
                 Assert.Equal(Row.GetBool("NetEnabled"), Adapter.IsEnabled);
+
+                if (Adapter.IsEnabled)
+                    Assert.Equal((int) Row.GetNumber("InterfaceIndex"), Adapter.InterfaceId);
 
                 if (Row.GetString("MACAddress") is string MacAddress)
                     Assert.Equal(MacAddress, Adapter.Address.Current);

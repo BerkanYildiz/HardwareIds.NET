@@ -62,6 +62,19 @@
             Assert.Equal(InExpected, HardwareIds.GetDiskInterfaceType(InInstanceId, InBusType));
         }
 
+        [Theory]
+        [InlineData(0x84, true)]    // NCF_PHYSICAL | NCF_HAS_UI: a regular Ethernet or Wi-Fi adapter
+        [InlineData(0x04, true)]
+        [InlineData(0x09, false)]   // NCF_VIRTUAL | NCF_HIDDEN: the kernel debugger adapter
+        [InlineData(0x29, false)]   // NCF_VIRTUAL | NCF_HIDDEN | NCF_NOT_USER_REMOVABLE: WAN miniports
+        [InlineData(0x01, false)]   // NCF_VIRTUAL: Hyper-V switches, VPN adapters
+        [InlineData(0x00, false)]
+        [InlineData(null, false)]
+        public void IsPhysicalAdapter_FollowsTheNcfPhysicalFlag(int? InCharacteristics, bool InExpected)
+        {
+            Assert.Equal(InExpected, HardwareIds.IsPhysicalAdapter(InCharacteristics));
+        }
+
         [Fact]
         public void FormatProcessorId_PutsEdxBeforeEax()
         {

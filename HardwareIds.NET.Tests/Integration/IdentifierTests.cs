@@ -82,7 +82,11 @@
 
             Assert.All(NvmeOrAta, Disk =>
             {
-                Assert.Matches("^[A-Za-z0-9_-]+$", Disk.NvmeSerial ?? Disk.AtaSerial);
+                //
+                // Serials are free-form printable ASCII: most are alphanumeric, but virtual disks report values like "SN: 00000".
+                //
+
+                Assert.Matches(@"^[\x21-\x7E]([\x20-\x7E]*[\x21-\x7E])?$", Disk.NvmeSerial ?? Disk.AtaSerial);
                 Assert.False(string.IsNullOrEmpty(Disk.Firmware));
                 Assert.NotNull(Disk.WorldWideName);
             });

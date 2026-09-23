@@ -68,7 +68,7 @@
         }
 
         [Fact]
-        public void Parse_UsesEmptyStringsWhenNothingIsAvailable()
+        public void Parse_ReportsTheNumericSerialEvenWhenZero()
         {
             var Info = Edid.Parse(BuildEdid(0x1E6D, 0x0001, 0, null, null));
 
@@ -76,7 +76,8 @@
             Assert.Equal("GSM", Info.Manufacturer);
             Assert.Equal("0001", Info.ProductCode);
             Assert.Equal(string.Empty, Info.Name);
-            Assert.Equal(string.Empty, Info.SerialNumber);
+            // WMI prints the numeric serial when there is no serial descriptor, zero included.
+            Assert.Equal("0", Info.SerialNumber);
         }
 
         [Fact]

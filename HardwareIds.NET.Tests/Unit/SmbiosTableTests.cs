@@ -281,12 +281,48 @@
             Assert.Equal("CPU-PART", Processor.PartNumber);
             Assert.Equal("CPU0", Processor.Channel);
             Assert.Equal("1.1 V", Processor.Voltage);
-            Assert.Matches("^[0-9A-F]{16}$", Processor.ModelNumber);
+            Assert.Equal("BFEBFBFF000906EA", Processor.ModelNumber);
             Assert.Matches("^[1-9][0-9]* MHz$", Processor.ClockSpeed);
             Assert.False(string.IsNullOrEmpty(Processor.Manufacturer));
             Assert.False(string.IsNullOrEmpty(Processor.Model));
             Assert.True(Processor.NumberOfCores >= 1);
             Assert.True(Processor.NumberOfLogicalProcessors >= Processor.NumberOfCores);
+        }
+
+        [Fact]
+        public void Collectors_ReportTheSmbiosProcessorIdEvenWhenZeroed()
+        {
+            //
+            // Hyper-V leaves the SMBIOS processor ID zeroed; WMI reports it as is, so the collector does too instead of reading CPUID.
+            //
+
+            var Table = new SmbiosBuilder()
+                .Add(4, SmbiosBuilder.Processor(new byte[8], 0x00, 2400, 0x41, 4, 8), "CPU 0", "GenuineIntel", "Intel(R) Xeon(R)", "", "")
+                .End()
+                .BuildTable();
+
+            var Hwid = new Hwid();
+            HardwareIds.RetrieveProcessors(Hwid, Table);
+
+            Assert.Equal("0000000000000000", Assert.Single(Hwid.Processors).ModelNumber);
+        }
+
+        [Fact]
+        public void Collectors_FallBackToCpuIdWhenTheProcessorRecordHasNoId()
+        {
+            //
+            // SMBIOS 2.0 records shorter than 0x10 bytes carry no processor ID.
+            //
+
+            var Table = new SmbiosBuilder()
+                .Add(4, SmbiosBuilder.Formatted(0x0C - 4, (0x04, [1]), (0x07, [2])), "CPU 0", "GenuineIntel")
+                .End()
+                .BuildTable();
+
+            var Hwid = new Hwid();
+            HardwareIds.RetrieveProcessors(Hwid, Table);
+
+            Assert.Equal(HardwareIds.GetProcessorIdFromCpuId(), Assert.Single(Hwid.Processors).ModelNumber);
         }
 
         [Fact]

@@ -127,7 +127,8 @@ on the label. All of them are kept, each in its own field.
 
 ## Notes on the identifiers
 
-- `ProcessorId` is the CPUID signature: identical for every CPU of the same model and stepping, not unique per chip.
+- `ProcessorId` is the CPUID signature the firmware records in SMBIOS, as WMI reports it: identical for every CPU of the
+  same model and stepping, not unique per chip, and all zeros under some hypervisors (Hyper-V, Azure).
 - `network_signatures` needs an elevated process; it is empty otherwise.
 - `routers` lists only devices inside the subnets of the interface and never devices answering with a gateway's MAC,
   which filters out the proxy-ARP artefacts of statically routed hosts.

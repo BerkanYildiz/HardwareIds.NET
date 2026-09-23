@@ -72,7 +72,7 @@
             {
                 Manufacturer = Manufacturer,
                 ProductCode = ProductCode,
-                SerialNumber = SerialText ?? (Serial != 0 ? Serial.ToString() : string.Empty),
+                SerialNumber = SerialText ?? Serial.ToString(),
                 Name = Name ?? string.Empty,
                 Hash = Hash,
                 ManufactureWeek = InData[16] == 0xFF ? 0 : InData[16],

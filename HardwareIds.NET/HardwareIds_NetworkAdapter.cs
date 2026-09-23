@@ -38,29 +38,41 @@
                     if (AdapterKey?.GetValue("NetCfgInstanceId") is not string InterfaceGuidText || !Guid.TryParse(InterfaceGuidText, out var InterfaceGuid))
                         continue;
 
-                    var Interface = Interfaces.FirstOrDefault(T => T.InterfaceGuid == InterfaceGuid);
+                    //
+                    // WMI's "PhysicalAdapter" is the NCF_PHYSICAL flag the driver declares; virtual adapters (kernel debugger,
+                    // Hyper-V switches, WAN miniports, VPNs) declare NCF_VIRTUAL instead, even when NDIS flags them as hardware.
+                    //
 
-                    if (Interface is null || !Interface.IsHardware || Interface.Type == IpHlpApi.IF_TYPE_SOFTWARE_LOOPBACK)
+                    if (!IsPhysicalAdapter(AdapterKey.GetValue("Characteristics") as int?))
                         continue;
 
                     var InstanceId = AdapterKey.GetValue("DeviceInstanceID") as string;
                     var DevNode = InstanceId != null ? CfgMgr32.LocateDevNode(InstanceId) : null;
+                    var Interface = Interfaces.FirstOrDefault(T => T.InterfaceGuid == InterfaceGuid);
+
+                    //
+                    // Skip adapters that were removed from the computer: their class key remains, but they have no device node and no interface.
+                    // A disabled adapter keeps its device node and is listed, without addresses, like WMI does.
+                    //
+
+                    if (DevNode is null && Interface is null)
+                        continue;
 
                     Entries.Add(new HwNetworkAdapter
                     {
                         Id = Index,
-                        InterfaceId = (int) Interface.InterfaceIndex,
-                        Name = AdapterKey.GetValue("DriverDesc") as string ?? Interface.Description,
+                        InterfaceId = (int) (Interface?.InterfaceIndex ?? 0),
+                        Name = AdapterKey.GetValue("DriverDesc") as string ?? Interface?.Description,
                         InterfaceGuid = InterfaceGuidText,
                         ServiceName = DevNode != null ? CfgMgr32.GetDevNodeProperty(DevNode.Value, CfgMgr32.DEVPKEY_Device_Service) : null,
-                        IsPhysical = Interface.IsHardware,
-                        IsEnabled = Interface.IsAdminUp,
+                        IsPhysical = true,
+                        IsEnabled = Interface?.IsAdminUp ?? false,
                         InstallDate = GetNetworkAdapterInstallDate(AdapterKey, DevNode),
                         InstanceId = InstanceId,
                         Address =
                         {
-                            Current = Interface.PhysicalAddress != null ? FormatMacAddress(Interface.PhysicalAddress) : null,
-                            Permanent = Interface.PermanentPhysicalAddress != null ? FormatMacAddress(Interface.PermanentPhysicalAddress) : null,
+                            Current = Interface?.PhysicalAddress != null ? FormatMacAddress(Interface.PhysicalAddress) : null,
+                            Permanent = Interface?.PermanentPhysicalAddress != null ? FormatMacAddress(Interface.PermanentPhysicalAddress) : null,
                         },
                     });
                 }
@@ -71,6 +83,16 @@
             {
                 // ...
             }
+        }
+
+        /// <summary>
+        /// Tells whether a network adapter driver declares the adapter as physical (NCF_PHYSICAL in its "Characteristics" value).
+        /// </summary>
+        /// <param name="InCharacteristics">The "Characteristics" value of the adapter's class key.</param>
+        internal static bool IsPhysicalAdapter(int? InCharacteristics)
+        {
+            const int NCF_PHYSICAL = 0x4;
+            return InCharacteristics != null && (InCharacteristics.Value & NCF_PHYSICAL) != 0;
         }
 
         private static DateTime? GetNetworkAdapterInstallDate(RegistryKey InAdapterKey, uint? InDevNode)
