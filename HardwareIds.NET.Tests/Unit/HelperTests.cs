@@ -62,17 +62,24 @@
             Assert.Equal(InExpected, HardwareIds.GetDiskInterfaceType(InInstanceId, InBusType));
         }
 
+        /// <summary>
+        /// Each case is an adapter met on a real machine, with the answer WMI gave for it.
+        /// </summary>
         [Theory]
-        [InlineData(0x84, true)]    // NCF_PHYSICAL | NCF_HAS_UI: a regular Ethernet or Wi-Fi adapter
-        [InlineData(0x04, true)]
-        [InlineData(0x09, false)]   // NCF_VIRTUAL | NCF_HIDDEN: the kernel debugger adapter
-        [InlineData(0x29, false)]   // NCF_VIRTUAL | NCF_HIDDEN | NCF_NOT_USER_REMOVABLE: WAN miniports
-        [InlineData(0x01, false)]   // NCF_VIRTUAL: Hyper-V switches, VPN adapters
-        [InlineData(0x00, false)]
-        [InlineData(null, false)]
-        public void IsPhysicalAdapter_FollowsTheNcfPhysicalFlag(int? InCharacteristics, bool InExpected)
+        [InlineData("VirtIO Ethernet (QEMU)", 0x84, true, (byte) 0x05, true)]
+        [InlineData("Mellanox ConnectX-5 VF (Azure)", 0x84, true, (byte) 0x05, true)]
+        [InlineData("Hyper-V synthetic adapter (Azure)", 0x04, true, (byte) 0x05, true)]
+        [InlineData("Ghost Hyper-V adapter left by the VM image (Azure)", 0x04, false, (byte) 0x01, false)]
+        [InlineData("Azure Network Adapter (MANA) whose driver did not start", 0x04, true, null, false)]
+        [InlineData("Kernel debugger adapter", 0x09, true, (byte) 0x00, false)]
+        [InlineData("WAN miniport", 0x29, true, (byte) 0x00, false)]
+        [InlineData("Hyper-V virtual switch (vEthernet)", 0x01, true, (byte) 0x01, false)]
+        [InlineData("Adapter without a Characteristics value", null, true, (byte) 0x05, false)]
+        public void IsPhysicalAdapter_MatchesWmiOnKnownAdapters(string InAdapter, int? InCharacteristics, bool InIsPresent, byte? InInterfaceFlags, bool InExpected)
         {
-            Assert.Equal(InExpected, HardwareIds.IsPhysicalAdapter(InCharacteristics));
+            var Interface = InInterfaceFlags is byte Flags ? new NetworkInterfaceInfo { Flags = Flags } : null;
+
+            Assert.True(InExpected == HardwareIds.IsPhysicalAdapter(InCharacteristics, InIsPresent, Interface), InAdapter);
         }
 
         [Fact]
