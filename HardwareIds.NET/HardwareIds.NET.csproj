@@ -30,7 +30,7 @@
     <RepositoryType>git</RepositoryType>
     <Description>Simple .NET library capable of tracking users across re-installs and hardware components swapping, and even entirely new computer using the neighborhood's network endpoints.</Description>
     <PackageTags>hwid, tracker, track, tracking, hardware, id, hardwareid, hardwareids, hwids, hardwares, identifier, identifiers, scan, network, query, serial, number, serialnumber</PackageTags>
-    <Version>2.0.0</Version>
+    <Version>2.1.0</Version>
     <PackageReleaseNotes>Hardware information is now read directly from the Windows APIs (SMBIOS, storage and NDIS IOCTLs, PnP, EDID, registry, spooler, WlanAPI) instead of WMI and wrapper libraries: a scan takes about 10 ms instead of seconds, and the library has no third-party dependencies anymore. New identifiers: per-disk NVMe, ATA, SCSI VPD and DUID fields, firmware, WWN and partition table GUID; PnP instance paths; monitor EDID hash and manufacture date; chassis; Bluetooth radios; batteries; machine GUID, hardware profile GUID, install time and machine SID. Public API unchanged (additive); targets .NET 10 and .NET Framework 4.8.</PackageReleaseNotes>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
