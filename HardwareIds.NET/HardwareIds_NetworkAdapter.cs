@@ -51,11 +51,12 @@
                     var Interface = Interfaces.FirstOrDefault(T => T.InterfaceGuid == InterfaceGuid);
 
                     //
-                    // Skip adapters that were removed from the computer: their class key remains, but they have no device node and no interface.
+                    // Skip adapters that are no longer present (removed hardware, or the NICs of the machine a VM image was captured on):
+                    // their class key and even their network interface remain, but their device node is gone, and WMI does not count them.
                     // A disabled adapter keeps its device node and is listed, without addresses, like WMI does.
                     //
 
-                    if (DevNode is null && Interface is null)
+                    if (DevNode is null)
                         continue;
 
                     Entries.Add(new HwNetworkAdapter
