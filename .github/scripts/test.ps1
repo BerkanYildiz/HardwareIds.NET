@@ -19,17 +19,22 @@ function ConvertTo-AnnotationText([string] $InText, [switch] $InProperty)
 
 $OutputFile = Join-Path ([System.IO.Path]::GetTempPath()) 'dotnet-test-output.txt'
 
-dotnet test --configuration $Configuration --no-build | Tee-Object -FilePath $OutputFile
+dotnet test --configuration $Configuration --no-build --no-ansi | Tee-Object -FilePath $OutputFile
 $ExitCode = $LASTEXITCODE
 
 if ($ExitCode -ne 0)
 {
-    $Lines = Get-Content $OutputFile
+    #
+    # Strip any ANSI escape sequence left in the output before parsing it.
+    #
+
+    $AnsiSequence = "$([char] 27)\[[0-9;?]*[A-Za-z]"
+    $Lines = @(Get-Content $OutputFile | ForEach-Object { $_ -replace $AnsiSequence, '' })
     $Reported = 0
 
     for ($I = 0; $I -lt $Lines.Count; $I++)
     {
-        if ($Lines[$I] -notmatch '^\s*failed (.+?)(\s+\([\d.]+m?s\))?\s*$')
+        if ($Lines[$I] -notmatch '^\W*failed (.+?)(\s+\([\d.]+m?s\))?\s*$')
         {
             continue
         }
@@ -42,7 +47,7 @@ if ($ExitCode -ne 0)
         {
             $Line = $Lines[$J].Trim()
 
-            if ($Line -eq '' -or $Line -match '^(failed|passed|skipped) ' -or $Line -match '^(Stack Trace:|at )')
+            if ($Line -eq '' -or $Line -match '^\W*(failed|passed|skipped) ' -or $Line -match '^(Stack Trace:|at )')
             {
                 break
             }
@@ -62,7 +67,12 @@ if ($ExitCode -ne 0)
 
     if ($Reported -eq 0)
     {
-        Write-Host "::error title=dotnet test::The test run failed without a failed test (exit code $ExitCode); see the log."
+        #
+        # Unrecognised output: report its tail so the failure is still visible without the logs.
+        #
+
+        $Tail = ($Lines | Where-Object { $_.Trim() -ne '' } | Select-Object -Last 40) -join "`n"
+        Write-Host "::error title=dotnet test exited with code $ExitCode::$(ConvertTo-AnnotationText $Tail)"
     }
 }
 
