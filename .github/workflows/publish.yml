@@ -67,11 +67,28 @@ jobs:
         with:
           user: ${{ env.NUGET_USER }}
 
+      # dotnet nuget push cannot resolve a wildcard inside a relative path on Windows, so each package is pushed by its full path.
+      # Pushing the .nupkg to NuGet.org also pushes the .snupkg next to it.
       - name: Push to NuGet.org
-        run: dotnet nuget push "artifacts/*.nupkg" --api-key ${{ steps.login.outputs.NUGET_API_KEY }} --source https://api.nuget.org/v3/index.json --skip-duplicate
+        shell: pwsh
+        run: |
+          $Packages = @(Get-ChildItem artifacts -Filter *.nupkg)
+          if ($Packages.Count -eq 0) { throw 'No package to push.' }
+
+          foreach ($Package in $Packages)
+          {
+              dotnet nuget push $Package.FullName --api-key "${{ steps.login.outputs.NUGET_API_KEY }}" --source https://api.nuget.org/v3/index.json --skip-duplicate
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
 
       - name: Push to GitHub Packages
-        run: dotnet nuget push "artifacts/*.nupkg" --api-key ${{ secrets.GITHUB_TOKEN }} --source https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json --skip-duplicate --no-symbols
+        shell: pwsh
+        run: |
+          foreach ($Package in @(Get-ChildItem artifacts -Filter *.nupkg))
+          {
+              dotnet nuget push $Package.FullName --api-key "${{ secrets.GITHUB_TOKEN }}" --source "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json" --skip-duplicate --no-symbols
+              if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          }
 
       - name: Create the GitHub release
         uses: softprops/action-gh-release@v3
