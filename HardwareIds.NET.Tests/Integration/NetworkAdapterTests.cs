@@ -1,8 +1,13 @@
 ﻿namespace HardwareIds.NET.Tests.Integration
 {
     using System;
+    using System.Collections.Generic;
     using System.Linq;
     using System.Net.NetworkInformation;
+
+    using global::HardwareIds.NET.Native;
+
+    using Microsoft.Win32;
 
     using Xunit;
 
@@ -68,7 +73,11 @@
             Assert.SkipWhen(Rows is null, "WMI is not available on this machine.");
 
             var Adapters = HwidFixture.Hwid.NetworkAdapters;
-            Assert.Equal(Rows.Select(T => (int) T.GetNumber("Index")).OrderBy(T => T), Adapters.Select(T => T.Id));
+            var Expected = Rows.Select(T => (int) T.GetNumber("Index")).OrderBy(T => T).ToList();
+            var Actual = Adapters.Select(T => T.Id).ToList();
+
+            if (!Expected.SequenceEqual(Actual))
+                Assert.Fail($"Physical adapters differ. WMI: [{string.Join(", ", Expected)}], native: [{string.Join(", ", Actual)}].\n{DescribeAdapters(Expected.Union(Actual))}");
 
             foreach (var Row in Rows)
             {
@@ -85,6 +94,34 @@
                 if (Row.GetString("MACAddress") is string MacAddress)
                     Assert.Equal(MacAddress, Adapter.Address.Current);
             }
+        }
+
+        /// <summary>
+        /// Describes adapters with everything WMI could base its "PhysicalAdapter" decision on, so a mismatch explains itself.
+        /// </summary>
+        private static string DescribeAdapters(IEnumerable<int> InIndexes)
+        {
+            var Rows = Wmi.Query("Win32_NetworkAdapter") ?? [];
+            var Interfaces = IpHlpApi.GetInterfaces();
+            var Lines = new List<string>();
+
+            using var ClassKey = Registry.LocalMachine.OpenSubKey(@"SYSTEM\CurrentControlSet\Control\Class\{4D36E972-E325-11CE-BFC1-08002BE10318}");
+
+            foreach (var Index in InIndexes.OrderBy(T => T))
+            {
+                var Row = Rows.FirstOrDefault(T => (int) T.GetNumber("Index") == Index);
+                using var AdapterKey = ClassKey?.OpenSubKey(Index.ToString("D4"));
+                var Guid = AdapterKey?.GetValue("NetCfgInstanceId") as string;
+                var Interface = Guid != null && System.Guid.TryParse(Guid, out var Parsed) ? Interfaces.FirstOrDefault(T => T.InterfaceGuid == Parsed) : null;
+
+                Lines.Add(
+                    $"#{Index} {Row?.GetString("Name") ?? AdapterKey?.GetValue("DriverDesc")}: " +
+                    $"wmi physical={Row?.GetBool("PhysicalAdapter")} installed={Row?.GetBool("Installed")} enabled={Row?.GetBool("NetEnabled")} status={Row?.GetNumber("NetConnectionStatus")} type={Row?.GetNumber("AdapterTypeID")} pnp={Row?.GetString("PNPDeviceID")} service={Row?.GetString("ServiceName")}; " +
+                    $"registry characteristics=0x{AdapterKey?.GetValue("Characteristics") as int? ?? -1:X} component={AdapterKey?.GetValue("ComponentId")} iftype={AdapterKey?.GetValue("*IfType")} media={AdapterKey?.GetValue("*MediaType")} physicalmedia={AdapterKey?.GetValue("*PhysicalMediaType")}; " +
+                    $"ndis {(Interface is null ? "no interface" : $"flags=0x{Interface.Flags:X2} iftype={Interface.Type} media={Interface.MediaType} physicalmedia={Interface.PhysicalMediumType} access={Interface.AccessType} connection={Interface.ConnectionType} adminup={Interface.IsAdminUp}")}");
+            }
+
+            return string.Join("\n", Lines);
         }
     }
 }

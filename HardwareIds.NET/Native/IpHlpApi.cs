@@ -40,6 +40,11 @@
         public uint InterfaceIndex { get; set; }
         public uint Type { get; set; }
         public bool IsHardware { get; set; }
+        public byte Flags { get; set; }
+        public uint MediaType { get; set; }
+        public uint PhysicalMediumType { get; set; }
+        public uint AccessType { get; set; }
+        public uint ConnectionType { get; set; }
         public bool IsAdminUp { get; set; }
         public string? Description { get; set; }
         public string? Alias { get; set; }
@@ -189,6 +194,11 @@
                         InterfaceIndex = Row->InterfaceIndex,
                         Type = Row->Type,
                         IsHardware = (Row->InterfaceAndOperStatusFlags & IF_FLAG_HARDWARE_INTERFACE) != 0,
+                        Flags = Row->InterfaceAndOperStatusFlags,
+                        MediaType = Row->MediaType,
+                        PhysicalMediumType = Row->PhysicalMediumType,
+                        AccessType = Row->AccessType,
+                        ConnectionType = Row->ConnectionType,
                         IsAdminUp = Row->AdminStatus == NET_IF_ADMIN_STATUS_UP,
                         Description = new string(Row->Description),
                         Alias = new string(Row->Alias),

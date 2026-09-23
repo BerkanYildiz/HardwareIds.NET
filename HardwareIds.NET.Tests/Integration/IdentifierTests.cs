@@ -70,7 +70,7 @@
             {
                 var Disk = Assert.Single(HwidFixture.Hwid.Disks, T => T.Id == (int) Row.GetNumber("Index"));
                 Assert.Equal(Row.GetString("PNPDeviceID"), Disk.InstanceId, StringComparer.OrdinalIgnoreCase);
-                Assert.Equal(Wmi.Normalize(Row.GetString("FirmwareRevision")), Wmi.Normalize(Disk.Firmware));
+                Assert.Equal(Wmi.Normalize(Row.GetString("FirmwareRevision")).Trim(), Wmi.Normalize(Disk.Firmware));   // WMI keeps the descriptor padding; the firmware field is trimmed
             }
         }
 

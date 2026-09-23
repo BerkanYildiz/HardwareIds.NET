@@ -38,7 +38,7 @@
 
                 using (var ProcessorKey = Registry.LocalMachine.OpenSubKey(@"HARDWARE\DESCRIPTION\System\CentralProcessor\0"))
                 {
-                    RegistryName = (ProcessorKey?.GetValue("ProcessorNameString") as string)?.Trim();
+                    RegistryName = ProcessorKey?.GetValue("ProcessorNameString") as string;   // untrimmed: AMD pads it to 48 characters, and WMI keeps the padding
                     RegistryVendor = ProcessorKey?.GetValue("VendorIdentifier") as string;
                     RegistrySpeed = ProcessorKey?.GetValue("~MHz") as int?;
                 }
