@@ -23,7 +23,7 @@
         public static readonly Guid GUID_DEVICE_BATTERY = new("72631E54-78A4-11D0-BCF7-00AA00B7B32A");
         public const uint IOCTL_BATTERY_QUERY_TAG = 0x00294040;
         public const uint IOCTL_BATTERY_QUERY_INFORMATION = 0x00294044;
-        public const uint BATTERY_TAG_INVALID = 0xFFFFFFFF;
+        public const uint BATTERY_TAG_INVALID = 0;
         public const uint GENERIC_READ = 0x80000000;
         public const uint BatteryInformation = 0;
         public const uint BatteryDeviceName = 4;
@@ -50,7 +50,8 @@
 
                     var Tag = QueryTag(Handle);
 
-                    if (Tag == null || Tag == BATTERY_TAG_INVALID)
+                    // An empty slot answers with BATTERY_TAG_INVALID; some drivers answer with all bits set instead.
+                    if (Tag == null || Tag == BATTERY_TAG_INVALID || Tag == uint.MaxValue)
                         continue;
 
                     var Info = new BatteryInfo

@@ -10,6 +10,18 @@
         /// <param name="InLaunchArgs">The launch arguments.</param>
         private static async Task Main(string[] InLaunchArgs)
         {
+            //
+            // --json [--indented] [--lan]: print a scan as JSON, e.g. to compare it with the C++ library's snapshot.
+            //
+
+            if (InLaunchArgs.Contains("--json"))
+            {
+                var Config = new HardwareIdsConfig { ScanLocalNetworkDevices = InLaunchArgs.Contains("--lan") };
+                var Options = new JsonSerializerOptions { WriteIndented = InLaunchArgs.Contains("--indented") };
+                Console.Out.Write(JsonSerializer.Serialize(HardwareIds.GetHwid(Config), Options));
+                return;
+            }
+
             using var CancellationTokenSource = new CancellationTokenSource();
             CancellationTokenSource.CancelAfter(TimeSpan.FromSeconds(10));
             var Hwid = await HardwareIds.GetHwidAsync(new HardwareIdsConfig { ScanLocalNetworkDevices = true, ScanNeighborEndpoints = true, DurationOfNetworkScan = TimeSpan.FromSeconds(5) }, CancellationTokenSource.Token);

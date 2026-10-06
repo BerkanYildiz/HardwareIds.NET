@@ -29,6 +29,7 @@ user can be recognised even on an entirely new computer sitting in the same plac
   earlier versions keep matching.
 - **Serializable.** The result is a plain object with `System.Text.Json` attributes; serialize it and store it as is.
 - **Tested.** 130+ unit and integration tests, the latter checking every collector against WMI as an independent oracle.
+- **C and C++ too.** [`HardwareIds.Cpp`](#c-and-c) is a native port that writes the very same JSON, byte for byte.
 
 ## What is collected
 
@@ -125,6 +126,88 @@ A drive legitimately reports different serial numbers depending on the layer ask
 reports (for NVMe drives, Windows derives it from the EUI-64), while `nvme_serial` or `ata_serial` is the serial printed
 on the label. All of them are kept, each in its own field.
 
+## C and C++
+
+[`HardwareIds.Cpp`](HardwareIds.Cpp) is a port of the library to C++20 for native programs. It runs the same collectors
+with the same rules and serializes the result to the JSON `JsonSerializer.Serialize(Hwid)` produces, byte for byte, so a
+snapshot taken by a native program can be compared directly with one taken from .NET. CI checks this on every push by
+diffing the output of both libraries on the runner. It needs MSVC and CMake 3.21 or later, and nothing else.
+
+### Adding it to a CMake project
+
+```cmake
+include(FetchContent)
+FetchContent_Declare(HardwareIds
+    GIT_REPOSITORY https://github.com/BerkanYildiz/HardwareIds.NET.git
+    GIT_TAG        master                # or a release tag
+    SOURCE_SUBDIR  HardwareIds.Cpp)
+FetchContent_MakeAvailable(HardwareIds)
+
+target_link_libraries(MyApp PRIVATE HardwareIds::HardwareIds)   # static library: C++ and C API
+```
+
+`add_subdirectory(path/to/HardwareIds.Cpp)` works the same way. Each release also attaches
+`HardwareIds.Cpp-<version>-win-x64.zip`, a prebuilt install tree for `find_package(HardwareIds CONFIG REQUIRED)`: it
+holds `HardwareIds::Shared` (`HardwareIds.dll`, the C API, usable from any configuration and any compiler) and
+`HardwareIds::HardwareIds` (the static library, built in Release with `/MD`).
+
+### C++
+
+```cpp
+#include <HardwareIds/HardwareIds.hpp>
+
+// Hardware only: a few milliseconds.
+auto Hwid = HardwareIds::GetHwid();
+
+std::string Json = HardwareIds::ToJson(Hwid);                                     // JsonSerializer.Serialize(Hwid)
+std::string Pretty = HardwareIds::ToJson(Hwid, HardwareIds::JsonFormat::Indented); // ... with WriteIndented = true
+
+for (const auto& Disk : Hwid.Disks)
+    std::wcout << Disk.Model.value_or(L"?") << L"  " << Disk.NvmeSerial.value_or(Disk.SerialNumber.value_or(L"")) << L'\n';
+```
+
+```cpp
+// With the network probes. Requesting a stop ends the scans early, like the .NET cancellation token.
+HardwareIds::HardwareIdsConfig Config;
+Config.ScanNeighborEndpoints = true;
+Config.DurationOfNetworkScan = std::chrono::seconds(3);
+Config.ScanLocalNetworkDevices = true;
+
+std::stop_source Stop;
+auto Hwid = HardwareIds::GetHwid(Config, Stop.get_token());
+```
+
+The structures mirror the .NET ones: the same sections and fields, strings as `std::wstring`, and missing values as
+`std::nullopt` (JSON `null`).
+
+### C
+
+```c
+#include <HardwareIds/HardwareIds.h>
+
+HardwareIds_Options Options = { 0 };            /* or pass NULL: hardware only, compact JSON */
+Options.ScanLocalNetworkDevices = 1;
+
+char* Json = HardwareIds_GetSnapshotJson(&Options);
+
+if (Json != NULL)
+{
+    puts(Json);
+    HardwareIds_Free(Json);
+}
+```
+
+Link against `HardwareIds.lib` and ship `HardwareIds.dll` next to the program, or link the static library and define
+`HARDWAREIDS_STATIC` (the CMake target defines it for you).
+
+### Snapshot tool
+
+`HardwareIdsSnapshot` prints a snapshot from the command line:
+
+```bash
+HardwareIdsSnapshot --indented --wifi=3 --lan --output snapshot.json
+```
+
 ## Notes on the identifiers
 
 - `ProcessorId` is the CPUID signature the firmware records in SMBIOS, as WMI reports it: identical for every CPU of the
@@ -146,6 +229,18 @@ synthetic data; integration tests run every collector on the local machine and c
 need hardware or privileges the machine lacks (Wi-Fi, a battery, a Bluetooth radio, monitor EDID, elevation) are
 skipped, not failed.
 
+The C++ library has its own tests, and a script that checks both libraries print the same snapshot:
+
+```bash
+cmake -S HardwareIds.Cpp -B HardwareIds.Cpp/build
+cmake --build HardwareIds.Cpp/build --config Release
+ctest --test-dir HardwareIds.Cpp/build --build-config Release
+```
+
+```powershell
+./.github/scripts/parity.ps1 -Snapshot HardwareIds.Cpp/build/Release/HardwareIdsSnapshot.exe
+```
+
 ## Releasing
 
 Pushing a version tag publishes the package:
@@ -156,8 +251,8 @@ git push origin v2.1.0
 ```
 
 The `Publish` workflow builds and tests the solution, packs the library with the tag as its version, pushes it to
-NuGet.org and GitHub Packages, and attaches the packages to a GitHub release with generated notes. A tag with a
-pre-release suffix (`v2.1.0-beta.1`) produces a pre-release.
+NuGet.org and GitHub Packages, and attaches the packages to a GitHub release with generated notes, along with the zip of
+the C++ library. A tag with a pre-release suffix (`v2.1.0-beta.1`) produces a pre-release.
 
 No secret is involved: NuGet.org is reached through [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing),
 which exchanges the workflow's OIDC token for a one-hour API key, and GitHub Packages uses the built-in token. The

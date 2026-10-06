@@ -45,3 +45,27 @@ jobs:
           name: HardwareIds.NET
           path: HardwareIds.NET/bin/Release/*.nupkg
           if-no-files-found: error
+
+      # The C++ port (HardwareIds.Cpp) must build without warnings, pass its tests, and print the same JSON as the .NET library on this machine.
+      - name: Configure the C++ library
+        run: cmake -S HardwareIds.Cpp -B build/cpp -A x64 -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
+
+      - name: Build the C++ library
+        run: cmake --build build/cpp --config Release
+
+      - name: Test the C++ library
+        run: ctest --test-dir build/cpp --build-config Release --output-on-failure
+
+      - name: Compare the C++ and .NET snapshots
+        shell: pwsh
+        run: ./.github/scripts/parity.ps1 -Snapshot build/cpp/Release/HardwareIdsSnapshot.exe
+
+      - name: Install the C++ library
+        run: cmake --install build/cpp --config Release --prefix artifacts/HardwareIds.Cpp
+
+      - name: Upload the C++ library
+        uses: actions/upload-artifact@v7
+        with:
+          name: HardwareIds.Cpp
+          path: artifacts/HardwareIds.Cpp
+          if-no-files-found: error
