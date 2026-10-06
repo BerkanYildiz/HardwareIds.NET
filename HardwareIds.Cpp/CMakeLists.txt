@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 3.21)
 
 # The publish workflow sets it from the version tag.
-set(HARDWAREIDS_VERSION "2.1.1" CACHE STRING "Version of the library (major.minor.patch)")
+set(HARDWAREIDS_VERSION "2.2.0" CACHE STRING "Version of the library (major.minor.patch)")
 
 project(HardwareIds
     VERSION ${HARDWAREIDS_VERSION}
