@@ -285,6 +285,115 @@ namespace HardwareIds
     };
 
     /// <summary>
+    /// An X.509 certificate exposed by the TPM provider.
+    /// </summary>
+    struct HwTpmCertificate
+    {
+        NullableString Source;                                 // The certificate source.
+        NullableString Subject;                                // The certificate subject.
+        NullableString Issuer;                                 // The certificate issuer.
+        NullableString SerialNumber;                           // The certificate serial number, in upper-case hexadecimal.
+        NullableString NotBefore;                              // The validity start, in UTC ISO 8601 format.
+        NullableString NotAfter;                               // The validity end, in UTC ISO 8601 format.
+        NullableString SignatureAlgorithm;                     // The signature algorithm OID.
+        NullableString PublicKeyAlgorithm;                     // The public key algorithm OID.
+        NullableString Sha256;                                 // The SHA-256 of the DER certificate, in lower-case hexadecimal.
+        NullableString Der;                                    // The complete DER certificate, encoded as Base64.
+    };
+
+    /// <summary>
+    /// Public key material and metadata exposed by the TPM provider.
+    /// </summary>
+    struct HwTpmKey
+    {
+        NullableString Kind;                                   // The key kind (Endorsement, StorageRoot or Persisted).
+        NullableString Name;                                   // The provider property or persisted key name.
+        NullableString Scope;                                  // The key scope (Platform, CurrentUser or LocalMachine).
+        NullableString Algorithm;                              // The CNG algorithm name.
+        std::optional<std::uint32_t> Length;                   // The key length, in bits.
+        NullableString UniqueName;                             // The unique persisted key name.
+        std::optional<std::uint32_t> Usage;                    // The NCRYPT_KEY_USAGE_PROPERTY flags.
+        std::optional<std::uint32_t> TpmUsage;                 // The PCP_KEY_USAGE_POLICY flags (8 denotes an identity key).
+        NullableString PublicKeyBlob;                          // The BCRYPT public key blob, encoded as Base64.
+        NullableString PublicKeySha256;                        // The SHA-256 of the public key blob, in lower-case hexadecimal.
+        std::vector<HwTpmCertificate> Certificates;            // The certificates associated with this key.
+    };
+
+    /// <summary>
+    /// A raw TPM 2.0 property.
+    /// </summary>
+    struct HwTpmProperty
+    {
+        std::uint32_t Property = 0;                            // The TPM_PT identifier.
+        std::uint32_t Value = 0;                               // The raw TPM property value.
+    };
+
+    /// <summary>
+    /// A supported TPM 2.0 algorithm.
+    /// </summary>
+    struct HwTpmAlgorithm
+    {
+        std::uint32_t Algorithm = 0;                           // The TPM_ALG_ID identifier.
+        std::uint32_t Attributes = 0;                          // The TPMA_ALGORITHM flags.
+    };
+
+    /// <summary>
+    /// A TPM 2.0 PCR bank and its allocation bitmap.
+    /// </summary>
+    struct HwTpmPcrBank
+    {
+        std::uint32_t Algorithm = 0;                           // The bank hash TPM_ALG_ID.
+        NullableString Selection;                              // The selected PCR bitmap, in upper-case hexadecimal.
+    };
+
+    /// <summary>
+    /// A failed TPM query and its native error code.
+    /// </summary>
+    struct HwTpmError
+    {
+        NullableString Operation;                              // The failed query or property.
+        NullableString Source;                                 // The error domain (TBS, TPM, NCrypt or Win32).
+        std::uint32_t Code = 0;                                // The raw error code in its source domain.
+    };
+
+    /// <summary>
+    /// TPM information collected without modifying provisioning.
+    /// </summary>
+    struct HwTpm
+    {
+        int Id = 0;                                            // The identifier.
+        NullableString Version;                                // The TPM generation (1.2 or 2.0).
+        std::optional<std::uint32_t> InterfaceType;            // The TPM_IFTYPE value reported by TBS.
+        std::optional<std::uint32_t> ImplementationRevision;   // The TBS implementation revision.
+        std::optional<std::uint32_t> ManufacturerId;           // The numeric TCG manufacturer identifier.
+        NullableString Manufacturer;                           // The four-character TCG manufacturer identifier.
+        NullableString VendorString;                           // The TPM vendor string.
+        NullableString Family;                                 // The specification family.
+        std::optional<std::uint32_t> SpecificationLevel;       // The specification level.
+        std::optional<std::uint32_t> SpecificationRevision;    // The specification revision in hundredths.
+        std::optional<std::uint32_t> SpecificationYear;        // The specification year.
+        std::optional<std::uint32_t> SpecificationDayOfYear;   // The specification day of year.
+        std::optional<std::uint32_t> FirmwareVersion1;         // The first vendor-defined firmware version word.
+        std::optional<std::uint32_t> FirmwareVersion2;         // The second vendor-defined firmware version word.
+        std::optional<std::uint32_t> PermanentFlags;           // The TPMA_PERMANENT flags.
+        std::optional<std::uint32_t> StartupClearFlags;        // The TPMA_STARTUP_CLEAR flags.
+        std::optional<bool> IsOwnerAuthSet;                    // Whether owner authorization is set.
+        std::optional<bool> IsEndorsementAuthSet;              // Whether endorsement authorization is set.
+        std::optional<bool> IsLockoutAuthSet;                  // Whether lockout authorization is set.
+        std::optional<bool> IsInLockout;                       // Whether dictionary-attack lockout is active.
+        std::optional<std::uint32_t> LockoutCounter;           // The dictionary-attack failure counter.
+        std::optional<std::uint32_t> MaxAuthFail;              // The dictionary-attack failure limit.
+        std::optional<std::uint32_t> LockoutInterval;          // The counter recovery interval, in seconds.
+        std::optional<std::uint32_t> LockoutRecovery;          // The lockout authorization recovery interval, in seconds.
+        std::vector<HwTpmProperty> Properties;                 // The raw fixed and variable TPM 2.0 properties.
+        std::vector<HwTpmAlgorithm> Algorithms;                // The supported TPM 2.0 algorithms.
+        std::vector<HwTpmPcrBank> PcrBanks;                    // The allocated TPM 2.0 PCR banks.
+        std::vector<HwTpmKey> Keys;                            // The accessible public TPM keys.
+        std::vector<HwTpmCertificate> Certificates;            // The available endorsement certificates, with their sources.
+        std::vector<HwTpmError> Errors;                        // The failed queries; unsupported or restricted data stays unset.
+    };
+
+    /// <summary>
     /// Everything collected about the computer. Each list follows the order of the .NET library.
     /// </summary>
     struct Hwid
@@ -309,6 +418,7 @@ namespace HardwareIds
         std::vector<HwWifi> Wifis;
         std::vector<HwRouter> Routers;
         std::vector<HwNetworkSignature> NetworkSignatures;
+        std::vector<HwTpm> Tpms;
     };
 
     struct HardwareIdsConfig

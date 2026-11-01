@@ -8,6 +8,7 @@
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include <wincrypt.h>
 
 #include "Internal.hpp"
 
@@ -1295,12 +1296,12 @@ namespace
         R"("operating_systems":[{"id":0,"name":"Windows 11 Pro","version":"10.0.26200","architecture":"64-bit","registered_user":"Synth","serial_number":"00330-80000-00000-AA000","install_date":"2024-03-07T00:00:00","last_boot_up_time":"2026-09-15T07:01:02.0000001","machine_guid":"3c9a7e15-6b2d-4f80-a1c4-5e7d9b0f2a63","sqm_machine_id":"{D41E7A93-0B5C-4F28-9E61-7A3C2B8F4D05}","hardware_profile_guid":"{a7f3c912-5e04-4b6d-8c21-f09e3d7b6a48}","install_time":"2024-03-07T09:41:27.5","machine_sid":"S-1-5-21-1000000001-2000000002-3000000003"}],)"
         R"("wifis":[{"id":0,"ssid":"Synthetic WiFi","bssid":"02:11:22:33:44:55","Strength":-50,"Channel":6,"Frequency":2437000,"Band":2.4,"Quality":90},{"id":1,"ssid":"","bssid":"02:11:22:33:44:56","Strength":-80,"Channel":36,"Frequency":5180000,"Band":5,"Quality":40}],)"
         R"("routers":[{"id":0,"gateways":[{"mac_address":"02:11:22:33:44:01","ip_address":"192.168.1.1"}],"dns_servers":["1.1.1.1","fe80::1%12"],"dhcp_servers":[],"network_devices":[{"mac_address":null,"ip_address":null}]}],)"
-        R"("network_signatures":[{"id":0,"profile_guid":"{6B1C0E2A-3D4F-4A5B-8C9D-0E1F2A3B4C5D}","name":"Network 2","gateway_address":"02:11:22:33:44:01"}]})";
+        R"("network_signatures":[{"id":0,"profile_guid":"{6B1C0E2A-3D4F-4A5B-8C9D-0E1F2A3B4C5D}","name":"Network 2","gateway_address":"02:11:22:33:44:01"}],"tpms":[]})";
 
     const char* const SectionNames[] =
     {
         "disks", "volumes", "network_adapters", "bluetooth_radios", "baseboards", "motherboards", "chassis", "bios_firmwares", "smbios_tables", "processors",
-        "memory_sticks", "batteries", "monitors", "video_controllers", "printers", "users", "operating_systems", "wifis", "routers", "network_signatures",
+        "memory_sticks", "batteries", "monitors", "video_controllers", "printers", "users", "operating_systems", "wifis", "routers", "network_signatures", "tpms",
     };
 
     // Removes the white space outside of JSON strings.
@@ -1446,8 +1447,25 @@ namespace
     // A real scan.
     //
 
-    std::string MaskBootTime(std::string InJson)
+    std::string ToComparableJson(Hwid InHwid)
     {
+        // TPM_PT_VAR counters and authorization state can change while other processes use the TPM.
+        for (auto& Tpm : InHwid.Tpms)
+        {
+            std::erase_if(Tpm.Properties, [](const auto& Property) { return Property.Property >= 0x200; });
+            Tpm.PermanentFlags.reset();
+            Tpm.StartupClearFlags.reset();
+            Tpm.IsOwnerAuthSet.reset();
+            Tpm.IsEndorsementAuthSet.reset();
+            Tpm.IsLockoutAuthSet.reset();
+            Tpm.IsInLockout.reset();
+            Tpm.LockoutCounter.reset();
+            Tpm.MaxAuthFail.reset();
+            Tpm.LockoutInterval.reset();
+            Tpm.LockoutRecovery.reset();
+        }
+
+        auto InJson = ToJson(InHwid);
         auto Start = InJson.find("\"last_boot_up_time\":\"");
 
         if (Start != std::string::npos)
@@ -1498,7 +1516,7 @@ namespace
 
     TEST(Scan_IsDeterministic)
     {
-        CHECK_EQ(MaskBootTime(ToJson(GetHwid())), MaskBootTime(ToJson(GetHwid())));
+        CHECK_EQ(ToComparableJson(GetHwid()), ToComparableJson(GetHwid()));
     }
 
     TEST(Scan_StopTokenSkipsEverythingWhenAlreadyRequested)
@@ -1558,6 +1576,285 @@ namespace
                 }
             }
         }
+    }
+
+    /// <summary>
+    /// Builds a synthetic TPM capability reply with explicit big-endian fields.
+    /// </summary>
+    Bytes TpmResponse(std::uint32_t InCapability, std::uint32_t InCount, const Bytes& InEntries, bool InMore = false)
+    {
+        Bytes Result(19 + InEntries.size());
+        Result[0] = 0x80;
+        Result[1] = 0x01;
+        const auto Write = [&](std::size_t InOffset, std::uint32_t InValue)
+        {
+            for (std::size_t I = 0; I < 4; I++) Result[InOffset + I] = static_cast<std::uint8_t>(InValue >> (24 - I * 8));
+        };
+        Write(2, static_cast<std::uint32_t>(Result.size()));
+        Result[10] = InMore ? 1 : 0;
+        Write(11, InCapability);
+        Write(15, InCount);
+        std::copy(InEntries.begin(), InEntries.end(), Result.begin() + 19);
+        return Result;
+    }
+
+    TEST(Tpm_PropertiesDecodeAndAdvancePages)
+    {
+        HwTpm Device;
+        bool More = false;
+        std::uint32_t Next = 0;
+        auto Page = TpmResponse(6, 2, { 0, 0, 1, 5, 0x49, 0x4E, 0x54, 0x43, 0, 0, 1, 6, 255, 255, 255, 255 }, true);
+        CHECK(ParseTpmCapability(Page, 6, 0x100, Device, More, Next));
+        CHECK(More);
+        CHECK_EQ(Next, 0x107u);
+        CHECK_EQ(Device.Properties[0].Value, 0x494E5443u);
+        CHECK_EQ(Device.Properties[1].Value, UINT32_MAX);
+        CHECK(ParseTpmCapability(TpmResponse(6, 1, { 0, 0, 1, 7, 0, 0, 0, 1 }), 6, Next, Device, More, Next));
+        CHECK(!More);
+        CHECK_EQ(Device.Properties.size(), 3u);
+    }
+
+    TEST(Tpm_AlgorithmsAndPcrsHaveDistinctLayouts)
+    {
+        HwTpm Device;
+        bool More = false;
+        std::uint32_t Next = 0;
+        CHECK(ParseTpmCapability(TpmResponse(0, 2, { 0, 1, 0, 0, 0, 9, 0, 0xB, 0, 0, 0, 4 }), 0, 0, Device, More, Next));
+        CHECK_EQ(Device.Algorithms[0].Algorithm, 1u);
+        CHECK_EQ(Device.Algorithms[0].Attributes, 9u);
+        CHECK(ParseTpmCapability(TpmResponse(5, 2, { 0, 4, 3, 0, 0, 0, 0, 0xB, 3, 255, 255, 255 }), 5, 0, Device, More, Next));
+        CHECK_EQ(Device.PcrBanks[0].Selection, L"000000");
+        CHECK_EQ(Device.PcrBanks[1].Selection, L"FFFFFF");
+    }
+
+    TEST(Tpm_RejectsTruncatedPagesWithoutPublishingPartialData)
+    {
+        auto Complete = TpmResponse(6, 2, { 0, 0, 1, 5, 0x49, 0x4E, 0x54, 0x43, 0, 0, 1, 6, 0, 0, 0, 0 });
+
+        for (std::size_t Length = 0; Length < Complete.size(); Length++)
+        {
+            Bytes Data(Complete.begin(), Complete.begin() + Length);
+            if (Length >= 6) Data[5] = static_cast<std::uint8_t>(Length);
+            HwTpm Device;
+            Device.Properties.push_back({ 1, 2 });
+            bool More = true;
+            std::uint32_t Next = 0;
+            CHECK(!ParseTpmCapability(Data, 6, 0x100, Device, More, Next));
+            CHECK(!More);
+            CHECK_EQ(Next, 0x100u);
+            CHECK_EQ(Device.Properties.size(), 1u);
+        }
+    }
+
+    TEST(Tpm_RejectsMalformedHeadersAndCounts)
+    {
+        for (const auto& [Offset, Value] : std::vector<std::pair<std::size_t, int>>{ { 0, 0 }, { 1, 2 }, { 5, 1 }, { 9, 1 }, { 10, 2 }, { 14, 5 }, { 15, 255 }, { 18, 2 } })
+        {
+            auto Page = TpmResponse(6, 1, { 0, 0, 1, 5, 0x49, 0x4E, 0x54, 0x43 });
+            Page[Offset] = static_cast<std::uint8_t>(Value);
+            HwTpm Device;
+            bool More = false;
+            std::uint32_t Next = 0;
+            CHECK(!ParseTpmCapability(Page, 6, 0x100, Device, More, Next));
+        }
+    }
+
+    TEST(Tpm_RejectsDuplicateNonprogressingAndOverflowPages)
+    {
+        HwTpm Device;
+        bool More = false;
+        std::uint32_t Next = 0;
+        CHECK(!ParseTpmCapability(TpmResponse(6, 0, {}, true), 6, 0x100, Device, More, Next));
+        CHECK(!ParseTpmCapability(TpmResponse(6, 1, { 0, 0, 1, 0, 0, 0, 0, 0 }), 6, 0x101, Device, More, Next));
+        CHECK(!ParseTpmCapability(TpmResponse(6, 2, { 0, 0, 1, 5, 0, 0, 0, 0, 0, 0, 1, 5, 0, 0, 0, 0 }), 6, 0x100, Device, More, Next));
+        CHECK(!ParseTpmCapability(TpmResponse(6, 1, { 255, 255, 255, 255, 0, 0, 0, 0 }), 6, 0, Device, More, Next));
+        CHECK(!ParseTpmCapability(TpmResponse(7, 0, {}), 7, 0, Device, More, Next));
+        CHECK(Device.Properties.empty());
+    }
+
+    TEST(Tpm_RejectsInvalidPcrLengthsAndTrailingData)
+    {
+        HwTpm Device;
+        bool More = false;
+        std::uint32_t Next = 0;
+        CHECK(!ParseTpmCapability(TpmResponse(5, 1, { 0, 0xB, 4, 255, 255, 255 }), 5, 0, Device, More, Next));
+        CHECK(!ParseTpmCapability(TpmResponse(5, 1, { 0, 0xB, 0 }), 5, 0, Device, More, Next));
+        CHECK(!ParseTpmCapability(TpmResponse(6, 0, { 1 }), 6, 0, Device, More, Next));
+        CHECK(ParseTpmCapability(TpmResponse(6, 0, {}), 6, 0, Device, More, Next));
+        CHECK(!More);
+    }
+
+    TEST(Tpm_UnknownStateRemainsNull)
+    {
+        HwTpm Device;
+        ApplyTpmProperties(Device);
+        CHECK(!Device.IsOwnerAuthSet.has_value());
+        CHECK(!Device.IsInLockout.has_value());
+        CHECK(!Device.LockoutCounter.has_value());
+        Device.Properties = { { 0x105, 0x49465800 }, { 0x200, 0x205 }, { 0x20E, 7 } };
+        ApplyTpmProperties(Device);
+        CHECK_EQ(Device.Manufacturer, L"IFX");
+        CHECK_EQ(Device.IsOwnerAuthSet, true);
+        CHECK_EQ(Device.IsEndorsementAuthSet, false);
+        CHECK_EQ(Device.IsLockoutAuthSet, true);
+        CHECK_EQ(Device.IsInLockout, true);
+        CHECK_EQ(Device.LockoutCounter, 7u);
+    }
+
+    TEST(Tpm_JsonKeepsUnknownStateAndNestedPublicMaterial)
+    {
+        Hwid Snapshot;
+        auto& Device = Snapshot.Tpms.emplace_back();
+        Device.Version = L"2.0";
+        Device.IsInLockout = false;
+        Device.Keys.push_back({ .Name = L"Synthetic", .PublicKeyBlob = L"AQID", .Certificates = { { .Source = L"KeyProperty", .Der = L"AQID" } } });
+        Device.Errors.push_back({ L"Denied", L"NCrypt", 0x80090010 });
+        const auto Json = ToJson(Snapshot);
+        CHECK(Json.find(R"("manufacturer_id":null)") != std::string::npos);
+        CHECK(Json.find(R"("is_in_lockout":false)") != std::string::npos);
+        CHECK(Json.find(R"("der":"AQID")") != std::string::npos);
+        CHECK(Json.find(R"("source":"NCrypt","code":2148073488)") != std::string::npos);
+    }
+
+    TEST(Tpm_CancelledCollectorDoesNotQuery)
+    {
+        Hwid Snapshot;
+        std::stop_source Stop;
+        Stop.request_stop();
+        RetrieveTpms(Snapshot, Stop.get_token());
+        CHECK(Snapshot.Tpms.empty());
+    }
+
+    TEST(Tpm_ProviderIdentityDecodesUtf16AndFirmwareWords)
+    {
+        HwTpm Device;
+        CHECK(ApplyTpmManufacturer(Device, Bytes{ 'I', 0, 'B', 0, 'M', 0, 0, 0, 0, 0 }));
+        CHECK_EQ(Device.ManufacturerId, 0x49424D00u);
+        CHECK_EQ(Device.Manufacturer, L"IBM");
+        CHECK(ApplyTpmManufacturer(Device, Bytes{ 'I', 0, 'N', 0, 'T', 0, 'C', 0, 0, 0 }));
+        CHECK_EQ(Device.ManufacturerId, 0x494E5443u);
+        CHECK_EQ(Device.Manufacturer, L"INTC");
+        CHECK(ApplyTpmManufacturer(Device, Bytes{ 'I', 0, 'F', 0, 'X', 0, ' ', 0, 0, 0 }));
+        CHECK_EQ(Device.ManufacturerId, 0x49465820u);
+        CHECK_EQ(Device.Manufacturer, L"IFX");
+        CHECK(!ApplyTpmManufacturer(Device, Bytes{ 'I', 0, 'N', 0, 'T', 0, 'C', 0 }));
+        CHECK(!ApplyTpmManufacturer(Device, Bytes{ 'I', 0, 0, 0, 'B', 0, 'M', 0, 0, 0 }));
+        CHECK(!ApplyTpmManufacturer(Device, Bytes{ 0, 0 }));
+        Device.FirmwareVersion1 = 1;
+        const Bytes Firmware{ 0x19, 0x20, 0x23, 0x10, 0x16, 0, 0x36, 0x36 };
+        CHECK(ApplyTpmFirmware(Device, Firmware));
+        CHECK_EQ(Device.FirmwareVersion1, 1u);
+        CHECK_EQ(Device.FirmwareVersion2, 0x00163636u);
+        Device.FirmwareVersion1.reset();
+        CHECK(ApplyTpmFirmware(Device, Firmware));
+        CHECK_EQ(Device.FirmwareVersion1, 0x20191023u);
+        CHECK(!ApplyTpmFirmware(Device, Bytes(7)));
+    }
+
+    TEST(Tpm_PcrBanksAllowUnsortedButNotDuplicateOrPagedSelections)
+    {
+        HwTpm Device;
+        bool More = false;
+        std::uint32_t Next = 0;
+        CHECK(ParseTpmCapability(TpmResponse(5, 2, { 0, 0xB, 3, 255, 255, 255, 0, 4, 3, 0, 0, 0 }), 5, 0, Device, More, Next));
+        CHECK_EQ(Device.PcrBanks[0].Algorithm, 11u);
+        CHECK_EQ(Device.PcrBanks[1].Algorithm, 4u);
+        CHECK(!ParseTpmCapability(TpmResponse(5, 2, { 0, 4, 3, 0, 0, 0, 0, 4, 3, 0, 0, 0 }), 5, 0, Device, More, Next));
+        CHECK(!ParseTpmCapability(TpmResponse(5, 1, { 0, 4, 3, 0, 0, 0 }, true), 5, 0, Device, More, Next));
+        CHECK(!ParseTpmCapability(TpmResponse(6, 1, { 0, 0, 2, 0, 0, 0, 0, 0 }), 6, 0x100, Device, More, Next));
+        CHECK(!ParseTpmCapability(TpmResponse(0, 65, Bytes(65 * 6)), 0, 0, Device, More, Next));
+    }
+
+    TEST(Tpm_PublicBlobsRejectTruncationOverflowAndPrivateKeyHeaders)
+    {
+        Bytes Rsa(24 + 3 + 256);
+        CopyAt(Rsa, 0, { 0x52, 0x53, 0x41, 0x31, 0, 8, 0, 0, 3, 0, 0, 0, 0, 1, 0, 0 });
+        HwTpmKey Key;
+        CHECK(SetTpmPublicBlob(Key, Rsa));
+        CHECK_EQ(Key.Algorithm, L"RSA");
+        CHECK_EQ(Key.Length, 2048u);
+        CHECK_EQ(Key.PublicKeySha256, Sha256Hex(Rsa));
+
+        for (std::size_t Length = 0; Length < Rsa.size(); Length++)
+        {
+            HwTpmKey Truncated;
+            CHECK(!SetTpmPublicBlob(Truncated, ByteSpan(Rsa).first(Length)));
+            CHECK(!Truncated.PublicKeyBlob);
+            CHECK(!Truncated.Length);
+        }
+
+        Rsa[16] = 1;
+        CHECK(!SetTpmPublicBlob(Key, Rsa));
+        Rsa[16] = 0;
+        Rsa[3] = 0x32;
+        CHECK(!SetTpmPublicBlob(Key, Rsa));
+        CHECK(!SetTpmPublicBlob(Key, Bytes{ 0x45, 0x43, 0x53, 0x31, 255, 255, 255, 255 }));
+        CHECK(!SetTpmPublicBlob(Key, Bytes{ 0x45, 0x43, 0x53, 0x35, 66, 0, 0, 0 }));
+    }
+
+    TEST(Tpm_PublicBlobsRecognizeP521AndKeepGenericCurveLengthUnknown)
+    {
+        Bytes Blob(8 + 2 * 66);
+        CopyAt(Blob, 0, { 0x45, 0x43, 0x53, 0x35, 66, 0, 0, 0 });
+        HwTpmKey P521;
+        CHECK(SetTpmPublicBlob(P521, Blob));
+        CHECK_EQ(P521.Length, 521u);
+        CHECK_EQ(P521.Algorithm, L"ECDSA");
+        P521.Algorithm = L"ECDSA_P521";
+        CHECK(SetTpmPublicBlob(P521, Blob));
+        CHECK_EQ(P521.Algorithm, L"ECDSA_P521");
+        CopyAt(Blob, 0, { 0x45, 0x43, 0x44, 0x50 });
+        HwTpmKey Generic;
+        CHECK(SetTpmPublicBlob(Generic, Blob));
+        CHECK_EQ(Generic.Algorithm, L"ECDSA");
+        CHECK(!Generic.Length);
+    }
+
+    TEST(Tpm_FullEccIncludesCurveParametersAndExactFieldBits)
+    {
+        Bytes Blob(32 + 7 * 66 + 66 + 1);
+        CopyAt(Blob, 0, { 0x45, 0x43, 0x4B, 0x50, 1, 0, 0, 0, 1, 0, 0, 0 });
+        CopyAt(Blob, 16, { 66, 0, 0, 0, 66, 0, 0, 0, 1, 0, 0, 0 });
+        Blob[32] = 1;
+        HwTpmKey Key;
+        CHECK(SetTpmPublicBlob(Key, Blob));
+        CHECK_EQ(Key.Algorithm, L"ECDH");
+        CHECK_EQ(Key.Length, 521u);
+
+        for (std::size_t Length = 0; Length < Blob.size(); Length++)
+            CHECK(!SetTpmPublicBlob(Key, ByteSpan(Blob).first(Length)));
+
+        auto Private = Blob;
+        Private.resize(Private.size() + 66);
+        CHECK(!SetTpmPublicBlob(Key, Private));
+        Blob[3] = 0x56;
+        CHECK(!SetTpmPublicBlob(Key, Blob));
+        Blob[3] = 0x50;
+        CopyAt(Blob, 16, { 255, 255, 255, 255 });
+        CHECK(!SetTpmPublicBlob(Key, Blob));
+    }
+
+    TEST(Tpm_CertificateDecodesUtcValidityAndRejectsTrailingData)
+    {
+        // A synthetic public ECDSA certificate; no private key is stored in this fixture.
+        const wchar_t* Encoded = L"MIIBxjCCASegAwIBAgIIB3g80O3TETIwCgYIKoZIzj0EAwIwJDEiMCAGA1UEAxMZU3ludGhldGljIFRQTSBDZXJ0aWZpY2F0ZTAgFw0yNTAxMDEwMDAwMDBaGA85OTk5MTIzMTIzNTk1OVowJDEiMCAGA1UEAxMZU3ludGhldGljIFRQTSBDZXJ0aWZpY2F0ZTCBmzAQBgcqhkjOPQIBBgUrgQQAIwOBhgAEAFPSWY50SndDUzDIYkkksmknm6Y++kFx30vgP+XEixvhdGwiu7Ael3VOyf2MfAE+JVCmDiLAZv1vo/EVKXU07MzUAbUxqneRlV44y93HbO/8Lcgld0fsICZFRtNQTTa/Hs/5nNXvTLcgJb83F4Ht4Qqso1yCpryQPkRIGy1ZkhFgs1sgMAoGCCqGSM49BAMCA4GMADCBiAJCAa/hx8c93ZNhVO1NoOqZc4DVnlR4I2+kPXMTTykWA7OfMXIE0D57CIkYQbC5z7eXTGyEAzCD/Kmez5doHulkxnEIAkIAnymo0FSSoSzmWhux7c4Omnqo7vao8V5+cgHp87xzk0PQYsc+sM5xZCBvDskrp5hoUr8A7v9e60YQQPTxkqXKnPo=";
+        DWORD Size = 0;
+        CHECK(CryptStringToBinaryW(Encoded, 0, CRYPT_STRING_BASE64, nullptr, &Size, nullptr, nullptr));
+        Bytes Der(Size);
+        CHECK(CryptStringToBinaryW(Encoded, 0, CRYPT_STRING_BASE64, Der.data(), &Size, nullptr, nullptr));
+        auto Certificate = ParseTpmCertificate(Der, L"Synthetic");
+        CHECK(Certificate.has_value());
+        CHECK_EQ(Certificate->Subject, L"CN=Synthetic TPM Certificate");
+        CHECK_EQ(Certificate->NotBefore, L"2025-01-01T00:00:00Z");
+        CHECK_EQ(Certificate->NotAfter, L"9999-12-31T23:59:59Z");
+        CHECK_EQ(Certificate->PublicKeyAlgorithm, L"1.2.840.10045.2.1");
+        CHECK_EQ(Certificate->Sha256, L"ffba74172f8576954772f4fd4c1dd64c8be28677ad8fc8bbfd00b6847642e3f0");
+        Der.push_back(0);
+        CHECK(!ParseTpmCertificate(Der, L"Trailing"));
+        CHECK(!ParseTpmCertificate(Bytes{ 0x30, 0 }, L"Invalid"));
+        CHECK(!IsTpmCertificateDer(Bytes{ 0x30, 0x80, 0, 0 }));
+        CHECK(!IsTpmCertificateDer(Bytes{ 0x30, 0x81, 1, 0 }));
+        CHECK(!IsTpmCertificateDer(Bytes{ 0x30, 0x84, 255, 255, 255, 255 }));
     }
 }
 

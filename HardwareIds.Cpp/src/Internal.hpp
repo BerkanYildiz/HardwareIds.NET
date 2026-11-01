@@ -392,6 +392,46 @@ namespace HardwareIds::Detail
     void RetrievePrinters(Hwid& InHwid);
     void RetrieveUserAccounts(Hwid& InHwid);
     void RetrieveOperatingSystems(Hwid& InHwid);
+
+    /// <summary>
+    /// Reads TPM capabilities, public keys and certificates without provisioning.
+    /// </summary>
+    void RetrieveTpms(Hwid& InHwid, std::stop_token InStopToken);
+
+    /// <summary>
+    /// Validates and decodes one TPM 2.0 capability response.
+    /// </summary>
+    bool ParseTpmCapability(ByteSpan InResponse, std::uint32_t InCapability, std::uint32_t InStart, HwTpm& InTpm, bool& OutMore, std::uint32_t& OutNext);
+
+    /// <summary>
+    /// Projects raw TPM properties into their named fields.
+    /// </summary>
+    void ApplyTpmProperties(HwTpm& InTpm);
+
+    /// <summary>
+    /// Decodes the UTF-16 PCP manufacturer identifier.
+    /// </summary>
+    bool ApplyTpmManufacturer(HwTpm& InTpm, ByteSpan InBytes);
+
+    /// <summary>
+    /// Decodes the four UINT16 PCP firmware words.
+    /// </summary>
+    bool ApplyTpmFirmware(HwTpm& InTpm, ByteSpan InBytes);
+
+    /// <summary>
+    /// Validates a complete RSA/ECC public blob before exposing its bytes and metadata.
+    /// </summary>
+    bool SetTpmPublicBlob(HwTpmKey& InKey, ByteSpan InBlob);
+
+    /// <summary>
+    /// Checks that one bounded DER sequence consumes the complete certificate buffer.
+    /// </summary>
+    bool IsTpmCertificateDer(ByteSpan InBytes);
+
+    /// <summary>
+    /// Decodes certificate-only DER without importing keys or building a trust chain.
+    /// </summary>
+    std::optional<HwTpmCertificate> ParseTpmCertificate(ByteSpan InDer, const std::wstring& InSource);
     void ScanNetworkEndpoints(Hwid& InHwid, std::chrono::milliseconds InTimeout, std::stop_token InStopToken);
     void ScanNetworkDevices(Hwid& InHwid, std::chrono::milliseconds InProbeWait, std::stop_token InStopToken);
 }

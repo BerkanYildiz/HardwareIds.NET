@@ -40,6 +40,9 @@ namespace HardwareIds
             void Int(std::int64_t InValue) { this->BeginValue(); this->Output += std::to_string(InValue); }
             void UInt(std::uint64_t InValue) { this->BeginValue(); this->Output += std::to_string(InValue); }
 
+            void OptionalUInt(const std::optional<std::uint32_t>& InValue) { if (InValue) this->UInt(*InValue); else this->Null(); }
+            void OptionalBool(const std::optional<bool>& InValue) { if (InValue) this->Bool(*InValue); else this->Null(); }
+
             void Float(float InValue)
             {
                 this->BeginValue();
@@ -466,6 +469,94 @@ namespace HardwareIds
             W.Name("profile_guid"); W.String(T.ProfileGuid);
             W.Name("name"); W.String(T.Name);
             W.Name("gateway_address"); W.String(T.DefaultGatewayMac);
+        });
+
+        WriteList(W, "tpms", InHwid.Tpms, [&](const HwTpm& T)
+        {
+            W.Name("id"); W.Int(T.Id);
+            W.Name("version"); W.String(T.Version);
+            W.Name("interface_type"); W.OptionalUInt(T.InterfaceType);
+            W.Name("implementation_revision"); W.OptionalUInt(T.ImplementationRevision);
+            W.Name("manufacturer_id"); W.OptionalUInt(T.ManufacturerId);
+            W.Name("manufacturer"); W.String(T.Manufacturer);
+            W.Name("vendor_string"); W.String(T.VendorString);
+            W.Name("family"); W.String(T.Family);
+            W.Name("specification_level"); W.OptionalUInt(T.SpecificationLevel);
+            W.Name("specification_revision"); W.OptionalUInt(T.SpecificationRevision);
+            W.Name("specification_year"); W.OptionalUInt(T.SpecificationYear);
+            W.Name("specification_day_of_year"); W.OptionalUInt(T.SpecificationDayOfYear);
+            W.Name("firmware_version1"); W.OptionalUInt(T.FirmwareVersion1);
+            W.Name("firmware_version2"); W.OptionalUInt(T.FirmwareVersion2);
+            W.Name("permanent_flags"); W.OptionalUInt(T.PermanentFlags);
+            W.Name("startup_clear_flags"); W.OptionalUInt(T.StartupClearFlags);
+            W.Name("is_owner_auth_set"); W.OptionalBool(T.IsOwnerAuthSet);
+            W.Name("is_endorsement_auth_set"); W.OptionalBool(T.IsEndorsementAuthSet);
+            W.Name("is_lockout_auth_set"); W.OptionalBool(T.IsLockoutAuthSet);
+            W.Name("is_in_lockout"); W.OptionalBool(T.IsInLockout);
+            W.Name("lockout_counter"); W.OptionalUInt(T.LockoutCounter);
+            W.Name("max_auth_fail"); W.OptionalUInt(T.MaxAuthFail);
+            W.Name("lockout_interval"); W.OptionalUInt(T.LockoutInterval);
+            W.Name("lockout_recovery"); W.OptionalUInt(T.LockoutRecovery);
+            WriteList(W, "properties", T.Properties, [&](const HwTpmProperty& Item12)
+            {
+                W.Name("property"); W.UInt(Item12.Property);
+                W.Name("value"); W.UInt(Item12.Value);
+            });
+            WriteList(W, "algorithms", T.Algorithms, [&](const HwTpmAlgorithm& Item12)
+            {
+                W.Name("algorithm"); W.UInt(Item12.Algorithm);
+                W.Name("attributes"); W.UInt(Item12.Attributes);
+            });
+            WriteList(W, "pcr_banks", T.PcrBanks, [&](const HwTpmPcrBank& Item12)
+            {
+                W.Name("algorithm"); W.UInt(Item12.Algorithm);
+                W.Name("selection"); W.String(Item12.Selection);
+            });
+            WriteList(W, "keys", T.Keys, [&](const HwTpmKey& Item12)
+            {
+                W.Name("kind"); W.String(Item12.Kind);
+                W.Name("name"); W.String(Item12.Name);
+                W.Name("scope"); W.String(Item12.Scope);
+                W.Name("algorithm"); W.String(Item12.Algorithm);
+                W.Name("length"); W.OptionalUInt(Item12.Length);
+                W.Name("unique_name"); W.String(Item12.UniqueName);
+                W.Name("usage"); W.OptionalUInt(Item12.Usage);
+                W.Name("tpm_usage"); W.OptionalUInt(Item12.TpmUsage);
+                W.Name("public_key_blob"); W.String(Item12.PublicKeyBlob);
+                W.Name("public_key_sha256"); W.String(Item12.PublicKeySha256);
+                WriteList(W, "certificates", Item12.Certificates, [&](const HwTpmCertificate& Item16)
+                {
+                    W.Name("source"); W.String(Item16.Source);
+                    W.Name("subject"); W.String(Item16.Subject);
+                    W.Name("issuer"); W.String(Item16.Issuer);
+                    W.Name("serial_number"); W.String(Item16.SerialNumber);
+                    W.Name("not_before"); W.String(Item16.NotBefore);
+                    W.Name("not_after"); W.String(Item16.NotAfter);
+                    W.Name("signature_algorithm"); W.String(Item16.SignatureAlgorithm);
+                    W.Name("public_key_algorithm"); W.String(Item16.PublicKeyAlgorithm);
+                    W.Name("sha256"); W.String(Item16.Sha256);
+                    W.Name("der"); W.String(Item16.Der);
+                });
+            });
+            WriteList(W, "certificates", T.Certificates, [&](const HwTpmCertificate& Item12)
+            {
+                W.Name("source"); W.String(Item12.Source);
+                W.Name("subject"); W.String(Item12.Subject);
+                W.Name("issuer"); W.String(Item12.Issuer);
+                W.Name("serial_number"); W.String(Item12.SerialNumber);
+                W.Name("not_before"); W.String(Item12.NotBefore);
+                W.Name("not_after"); W.String(Item12.NotAfter);
+                W.Name("signature_algorithm"); W.String(Item12.SignatureAlgorithm);
+                W.Name("public_key_algorithm"); W.String(Item12.PublicKeyAlgorithm);
+                W.Name("sha256"); W.String(Item12.Sha256);
+                W.Name("der"); W.String(Item12.Der);
+            });
+            WriteList(W, "errors", T.Errors, [&](const HwTpmError& Item12)
+            {
+                W.Name("operation"); W.String(Item12.Operation);
+                W.Name("source"); W.String(Item12.Source);
+                W.Name("code"); W.UInt(Item12.Code);
+            });
         });
 
         W.EndObject();

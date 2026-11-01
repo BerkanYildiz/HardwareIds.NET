@@ -1,6 +1,6 @@
 # Checks that the C++ library and HardwareIds.NET describe this machine the same way: HardwareIdsSnapshot and the
 # HardwareIds.NET.Testing --json mode must print the same JSON, byte for byte, in both the compact and the indented
-# forms. Only the last boot time is masked, since each process computes it from its own clock reading.
+# forms. Boot time and volatile TPM state are masked because separate processes observe different instants.
 # Every difference is reported as an error annotation; the script exits with 1 when the outputs differ.
 
 param(
@@ -36,7 +36,13 @@ function Get-Json([string] $InFileName, [string[]] $InArguments)
         if ($Process.ExitCode -ne 0) { throw "$InFileName $InArguments exited with code $($Process.ExitCode)." }
 
         $Json = [System.IO.File]::ReadAllText($Output)
-        return [regex]::Replace($Json, '"last_boot_up_time": ?"[^"]*"', '"last_boot_up_time":"*"')
+        $Json = [regex]::Replace($Json, '"last_boot_up_time": ?"[^"]*"', '"last_boot_up_time":"*"')
+        $Json = [regex]::Replace($Json, '("property":\s*(\d+),\s*"value":\s*)\d+', {
+            param($Match)
+            if ([uint32] $Match.Groups[2].Value -ge 0x200 -and [uint32] $Match.Groups[2].Value -lt 0x300) { return $Match.Groups[1].Value + '0' }
+            return $Match.Value
+        })
+        return [regex]::Replace($Json, '("(?:permanent_flags|startup_clear_flags|is_owner_auth_set|is_endorsement_auth_set|is_lockout_auth_set|is_in_lockout|lockout_counter|max_auth_fail|lockout_interval|lockout_recovery)":\s*)(?:\d+|true|false|null)', '${1}null')
     }
     finally
     {

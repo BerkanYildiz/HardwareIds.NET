@@ -180,6 +180,13 @@
             if (!InCancellationToken.IsCancellationRequested)
                 RetrieveOperatingSystems(Hwid);
 
+            //
+            // Retrieve the TPM capabilities, public keys and certificates.
+            //
+
+            if (!InCancellationToken.IsCancellationRequested)
+                RetrieveTpms(Hwid, InCancellationToken);
+
             // 
             // Wait for every running tasks to terminate.
             // 

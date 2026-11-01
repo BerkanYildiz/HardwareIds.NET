@@ -18,6 +18,7 @@
     {
         private static readonly Dictionary<string, string[]> ExpectedProperties = new()
         {
+            ["tpms"] = ["id", "version", "interface_type", "implementation_revision", "manufacturer_id", "manufacturer", "vendor_string", "family", "specification_level", "specification_revision", "specification_year", "specification_day_of_year", "firmware_version1", "firmware_version2", "permanent_flags", "startup_clear_flags", "is_owner_auth_set", "is_endorsement_auth_set", "is_lockout_auth_set", "is_in_lockout", "lockout_counter", "max_auth_fail", "lockout_interval", "lockout_recovery", "properties", "algorithms", "pcr_banks", "keys", "certificates", "errors"],
             ["disks"] = ["id", "interface", "model", "serial_number", "capacity", "partitions", "is_removable", "is_smart", "firmware", "world_wide_name", "disk_guid", "instance_id", "nvme_serial", "nvme_eui64", "nvme_nguid", "nvme_fguid", "ata_serial", "ata_wwn", "vpd_t10", "vpd_eui64", "vpd_nguid", "vpd_naa", "vpd_scsi_name", "vpd_vendor", "duid"],
             ["volumes"] = ["id", "path", "letter", "serial_number"],
             ["network_adapters"] = ["id", "interface_id", "name", "interface_guid", "service_name", "address", "is_physical", "is_enabled", "install_date", "instance_id"],
@@ -43,6 +44,7 @@
         private static Hwid BuildPopulatedHwid()
         {
             var Hwid = new Hwid();
+            Hwid.Tpms.Add(new HwTpm { Id = 0, Version = "2.0" });
             Hwid.Disks.Add(new HwDisk { Id = 0, Interface = "SCSI", Model = "Disk", SerialNumber = "SN", Capacity = "1 GB", Partitions = 1, IsRemovable = false, IsSMART = true, Firmware = "1.0", WorldWideName = "5002538E41234567", DiskGuid = "34367483-8f7f-4160-83a9-f0d033bab3b3", InstanceId = @"SCSI\DISK&VEN_X&PROD_Y\1&2&0&0", NvmeSerial = "S4EWNX0N123456K", NvmeEui64 = "002538B71C9B5B4E", NvmeNguid = null, NvmeFguid = null, AtaSerial = null, AtaWwn = null, VpdT10 = null, VpdEui64 = null, VpdNguid = null, VpdNaa = "5002538E41234567", VpdScsiName = "eui.002538B71C9B5B4E", VpdVendor = null, Duid = new string('c', 64) });
             Hwid.Volumes.Add(new HwVolume { Id = 0, Path = @"\\?\Volume{00000000-0000-0000-0000-000000000000}\", Letter = "C:", SerialNumber = 1 });
             Hwid.NetworkAdapters.Add(new HwNetworkAdapter { Id = 1, InterfaceId = 2, Name = "NIC", InterfaceGuid = "{00000000-0000-0000-0000-000000000000}", ServiceName = "svc", IsPhysical = true, IsEnabled = true, InstallDate = new DateTime(2026, 1, 1), InstanceId = @"PCI\VEN_1AF4&DEV_1000\1&2&0&0", Address = { Current = "00:11:22:33:44:55", Permanent = "00:11:22:33:44:55" } });
@@ -148,6 +150,8 @@
             Assert.Null(Hwid.Disks[0].Duid);
             Assert.Null(Hwid.Disks[0].DiskGuid);
             Assert.Null(Hwid.OperatingSystems[0].MachineGuid);
+            Assert.Empty(Hwid.Tpms);
+            Assert.Null(Hwid.Tpm);
             Assert.Empty(Hwid.Chassis);
             Assert.Empty(Hwid.Batteries);
             Assert.Empty(Hwid.BluetoothRadios);

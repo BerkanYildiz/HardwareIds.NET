@@ -1,7 +1,7 @@
 <h1 align="center">HardwareIds.NET</h1>
 
 <p align="center">
-  Fingerprint a Windows machine in about 10 milliseconds, straight from the Windows APIs, with no WMI and no dependencies.
+  Fingerprint a Windows machine straight from the Windows APIs, with no WMI and no dependencies.
 </p>
 
 <p align="center">
@@ -20,11 +20,12 @@ user can be recognised even on an entirely new computer sitting in the same plac
 
 ## Highlights
 
-- **Fast.** A full hardware scan takes about 10 ms. Everything is read from the Windows APIs directly: the SMBIOS table,
+- **Direct.** Everything is read from the Windows APIs: the SMBIOS table,
   storage and NDIS IOCTLs, the PnP configuration manager, the registry, the print spooler, the display configuration API,
-  the battery and Bluetooth APIs and WlanAPI. No WMI, no `winmgmt` service, no `WmiPrvSE` host.
+  the battery and Bluetooth APIs, WlanAPI, TPM Base Services and CNG. TPM key reads can add seconds depending on firmware
+  and other applications using the TPM. No WMI, no `winmgmt` service, no `WmiPrvSE` host.
 - **Dependency-free.** No third-party packages. Only `System.Text.Json` on .NET Framework, which is part of .NET 10.
-- **No elevation needed.** Every collector works from a standard user account.
+- **Works without elevation.** Restricted TPM fields and machine keys remain unavailable; network signatures require elevation.
 - **WMI-compatible values.** The historical fields hold the exact strings WMI reports, so identifiers collected by
   earlier versions keep matching.
 - **Serializable.** The result is a plain object with `System.Text.Json` attributes; serialize it and store it as is.
@@ -51,6 +52,7 @@ user can be recognised even on an entirely new computer sitting in the same plac
 | `wifis` (optional) | WlanAPI scan | SSID, BSSID, signal, channel, band |
 | `routers` (optional) | Neighbour cache, ARP sweep | Gateways with their MAC, DNS and DHCP servers, every device on the LAN |
 | `network_signatures` | Registry (elevated only) | Networks the machine connected to, with their gateway MAC |
+| `tpms` | TBS, TPM2_GetCapability, Platform Crypto Provider, certificate stores | TPM version, manufacturer, firmware, specification, flags, lockout state, raw properties, algorithms, PCR banks, public EK/SRK and persisted keys, endorsement and associated certificates |
 
 ## Installation
 
@@ -69,7 +71,7 @@ Requirements: Windows, and .NET 10 or .NET Framework 4.8.
 ```csharp
 using HardwareIds.NET;
 
-// Hardware only: about 10 ms.
+// Hardware only, including the TPM's available public key material.
 var Hwid = HardwareIds.GetHwid();
 
 Console.WriteLine(Hwid.Motherboard?.UUID);
@@ -100,7 +102,51 @@ var Json = JsonSerializer.Serialize(Hwid);
 ```
 
 Every section is a list, and each has a convenience getter for its first entry (`Hwid.Disk`, `Hwid.Processor`,
-`Hwid.OperatingSystem`, ...). Collectors never throw: a component that cannot be read simply yields an empty list.
+`Hwid.OperatingSystem`, `Hwid.Tpm`, ...). Collectors never throw. Missing components yield empty lists; TPM queries
+retain partial results and expose individual failures in `Tpm.Errors`.
+
+### TPM information
+
+```csharp
+var Tpm = HardwareIds.GetHwid().Tpm;
+
+if (Tpm != null)
+{
+    Console.WriteLine($"TPM {Tpm.Version}: {Tpm.Manufacturer}");
+
+    foreach (var Key in Tpm.Keys)
+        Console.WriteLine($"{Key.Kind} / {Key.Scope} / {Key.Name}: {Key.PublicKeySha256}");
+
+    foreach (var Certificate in Tpm.Certificates)
+        Console.WriteLine($"{Certificate.Source}: {Certificate.Subject} ({Certificate.Sha256})");
+
+    foreach (var Error in Tpm.Errors)
+        Console.WriteLine($"{Error.Operation}: {Error.Source} 0x{Error.Code:X8}");
+}
+```
+
+- `Keys` includes the default, RSA and ECC endorsement public keys, the storage-root public key, and accessible
+  persisted keys from the Microsoft Platform Crypto Provider in the current-user and local-machine scopes. Identity
+  keys (AIKs) can be identified by bit `0x8` of `TpmUsage`. Enumeration follows the caller's access rights.
+- `PublicKeyBlob` is Base64-encoded BCRYPT public-key data (RSA, ECC or full ECC); `PublicKeySha256` hashes those exact bytes, not
+  SubjectPublicKeyInfo or the certificate. `Length` is in bits, or null if the curve size is unknown. Malformed public
+  blobs are rejected. Private keys and authorization secrets are not read.
+- `Certificates` contains available PCP endorsement certificate stores, including the NV-backed stores. `Source`
+  identifies each store, so the same certificate can occur under several sources. Each entry includes complete DER
+  in Base64, SHA-256, subject, issuer, serial number, UTC validity and algorithm OIDs. `Keys[i].Certificates` also
+  includes certificates returned by the key property or matched by provider/container in the Personal (`My`) stores.
+- TPM 2.0 exposes fixed and variable properties, specification and firmware words, supported algorithm IDs, and PCR
+  selection bitmaps. A set bit in `PcrBanks[i].Selection` selects that PCR (least-significant bit first within each
+  byte); PCR digest values are not collected. Firmware words retain the vendor's encoding. TPM 1.2 receives TBS and
+  available PCP information; TPM 2.0-only fields stay null or empty.
+- Reads use [TBS](https://learn.microsoft.com/en-us/windows/win32/api/tbs/nf-tbs-tbsi_getdeviceinfo) and silent
+  [CNG enumeration](https://learn.microsoft.com/en-us/windows/win32/api/ncrypt/nf-ncrypt-ncryptenumkeys). The collector
+  does not create, clear, provision or modify keys, prompt for authorization, download certificates, or validate
+  certificate trust. TPM access is serialized within each process, with bounded retries for transient read failures.
+- A missing TPM yields `Tpms = []`. Unsupported properties, denied access and failed queries leave their fields null
+  or lists empty, with raw codes in `Errors` (`TBS`, `TPM`, `NCrypt` or `Win32`). A null boolean means unknown.
+  Each PCP certificate store and persisted-key scope is limited to 1,024 entries; truncation is reported in `Errors`.
+  Cancellation is checked between queries and enumeration steps; an in-flight Windows API call finishes first.
 
 ### A disk, for example
 
@@ -156,7 +202,7 @@ holds `HardwareIds::Shared` (`HardwareIds.dll`, the C API, usable from any confi
 ```cpp
 #include <HardwareIds/HardwareIds.hpp>
 
-// Hardware only: a few milliseconds.
+// Hardware only, including the TPM's available public key material.
 auto Hwid = HardwareIds::GetHwid();
 
 std::string Json = HardwareIds::ToJson(Hwid);                                     // JsonSerializer.Serialize(Hwid)
@@ -224,12 +270,13 @@ dotnet build
 dotnet test
 ```
 
-The test project runs on both target frameworks. Unit tests exercise the SMBIOS, EDID, NVMe, ATA and SCSI parsers on
+The test project runs on both target frameworks. Unit tests exercise the SMBIOS, EDID, NVMe, ATA, SCSI and TPM parsers on
 synthetic data; integration tests run every collector on the local machine and compare the results with WMI. Tests that
 need hardware or privileges the machine lacks (Wi-Fi, a battery, a Bluetooth radio, monitor EDID, elevation) are
 skipped, not failed.
 
-The C++ library has its own tests, and a script that checks both libraries print the same snapshot:
+The C++ library has its own tests, and a script that checks both libraries print the same snapshot. Boot time and
+volatile TPM state are masked during live comparisons; key material, certificates and fixed TPM capabilities are compared:
 
 ```bash
 cmake -S HardwareIds.Cpp -B HardwareIds.Cpp/build

@@ -28,10 +28,11 @@ set(HARDWAREIDS_SOURCES
     src/Smbios.cpp
     src/Storage.cpp
     src/System.cpp
+    src/Tpm.cpp
     src/Wlan.cpp)
 
 # Only system libraries. wlanapi.dll, bthprops.cpl and winbrand.dll are optional and loaded at runtime.
-set(HARDWAREIDS_SYSTEM_LIBRARIES advapi32 bcrypt cfgmgr32 iphlpapi netapi32 user32 winspool ws2_32)
+set(HARDWAREIDS_SYSTEM_LIBRARIES advapi32 bcrypt cfgmgr32 crypt32 iphlpapi ncrypt netapi32 tbs user32 winspool ws2_32)
 
 function(hardwareids_configure_target InTarget)
     target_compile_features(${InTarget} PUBLIC cxx_std_20)

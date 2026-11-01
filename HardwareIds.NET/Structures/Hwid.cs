@@ -247,5 +247,17 @@
         /// </summary>
         [JsonIgnore]
         public HwNetworkSignature? NetworkSignature => this.NetworkSignatures?.FirstOrDefault();
+
+        /// <summary>
+        /// Gets or sets the trusted platform modules.
+        /// </summary>
+        [JsonPropertyName("tpms")]
+        public List<HwTpm> Tpms { get; set; } = [];
+
+        /// <summary>
+        /// Gets the main trusted platform module.
+        /// </summary>
+        [JsonIgnore]
+        public HwTpm? Tpm => this.Tpms?.FirstOrDefault();
     }
 }

@@ -89,6 +89,7 @@ namespace HardwareIds
         Run(InStopToken, [&] { RetrievePrinters(Result); });
         Run(InStopToken, [&] { RetrieveUserAccounts(Result); });
         Run(InStopToken, [&] { RetrieveOperatingSystems(Result); });
+        Run(InStopToken, [&] { RetrieveTpms(Result, InStopToken); });
 
         //
         // Wait for the network scans; a cancellation makes them stop early.
