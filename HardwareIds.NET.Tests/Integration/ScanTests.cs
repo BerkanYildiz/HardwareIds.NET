@@ -55,6 +55,12 @@
         }
 
         [Fact]
+        public void GetHwid_MatchesTheJsonSchema()
+        {
+            Assert.Empty(HwidSchema.Validate(HwidFixture.Hwid));
+        }
+
+        [Fact]
         public void GetHwid_WithCancelledToken_ReturnsAnEmptyResult()
         {
             using var Cancellation = CancellationTokenSource.CreateLinkedTokenSource(TestToken);
@@ -155,6 +161,12 @@
             var Hwid = await ScanLocalNetworkAsync();
 
             Assert.All(Hwid.Routers, Router => Assert.True(Router.Gateways.Count + Router.DnsServers.Count + Router.DhcpServers.Count + Router.NetworkDevices.Count > 0, $"Router {Router.Id} is empty."));
+        }
+
+        [Fact]
+        public async Task LocalNetworkScan_MatchesTheJsonSchema()
+        {
+            Assert.Empty(HwidSchema.Validate(await ScanLocalNetworkAsync()));
         }
 
         [Fact]

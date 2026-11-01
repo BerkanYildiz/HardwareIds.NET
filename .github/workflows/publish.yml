@@ -2,7 +2,7 @@ name: Publish
 
 # Runs when a version tag is pushed (v2.0.0, v2.1.0-beta.1, ...): builds and tests the solution, packs the library
 # with the tag as its version, then pushes the package to NuGet.org and GitHub Packages and attaches it to a release,
-# along with a zip of the C++ library.
+# along with a zip of the C++ library and the JSON schema of the snapshots.
 #
 # NuGet.org is reached through Trusted Publishing (OIDC): no API key is stored anywhere. The repository must have a
 # Trusted Publishing policy on nuget.org (profile > Trusted Publishing) with:
@@ -81,6 +81,10 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           Copy-Item LICENSE build/HardwareIds.Cpp
           Compress-Archive -Path build/HardwareIds.Cpp/* -DestinationPath "artifacts/HardwareIds.Cpp-${{ env.VERSION }}-win-x64.zip"
+
+      - name: Attach the JSON schema
+        shell: pwsh
+        run: Copy-Item hwid.schema.json artifacts
 
       # The temporary key lives one hour, so it is requested right before the push.
       - name: NuGet login (OIDC to temporary API key)

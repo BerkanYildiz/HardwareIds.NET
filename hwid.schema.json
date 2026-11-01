@@ -1,0 +1,1669 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://raw.githubusercontent.com/BerkanYildiz/HardwareIds.NET/master/hwid.schema.json",
+  "title": "Hwid",
+  "description": "A hardware snapshot, as serialized by HardwareIds.NET (System.Text.Json with the default options) and printed by HardwareIds.Cpp (HardwareIds_GetSnapshotJson, HardwareIdsSnapshot).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "disks",
+    "volumes",
+    "network_adapters",
+    "bluetooth_radios",
+    "baseboards",
+    "motherboards",
+    "chassis",
+    "bios_firmwares",
+    "smbios_tables",
+    "processors",
+    "memory_sticks",
+    "batteries",
+    "monitors",
+    "video_controllers",
+    "printers",
+    "users",
+    "operating_systems",
+    "wifis",
+    "routers",
+    "network_signatures",
+    "tpms"
+  ],
+  "properties": {
+    "disks": {
+      "type": "array",
+      "description": "Physical disks.",
+      "items": {
+        "$ref": "#/definitions/disk"
+      }
+    },
+    "volumes": {
+      "type": "array",
+      "description": "Volumes.",
+      "items": {
+        "$ref": "#/definitions/volume"
+      }
+    },
+    "network_adapters": {
+      "type": "array",
+      "description": "Physical network adapters.",
+      "items": {
+        "$ref": "#/definitions/networkAdapter"
+      }
+    },
+    "bluetooth_radios": {
+      "type": "array",
+      "description": "Bluetooth radios.",
+      "items": {
+        "$ref": "#/definitions/bluetoothRadio"
+      }
+    },
+    "baseboards": {
+      "type": "array",
+      "description": "Baseboards.",
+      "items": {
+        "$ref": "#/definitions/baseboard"
+      }
+    },
+    "motherboards": {
+      "type": "array",
+      "description": "Systems (motherboards).",
+      "items": {
+        "$ref": "#/definitions/motherboard"
+      }
+    },
+    "chassis": {
+      "type": "array",
+      "description": "Chassis (enclosures).",
+      "items": {
+        "$ref": "#/definitions/chassis"
+      }
+    },
+    "bios_firmwares": {
+      "type": "array",
+      "description": "BIOS firmwares.",
+      "items": {
+        "$ref": "#/definitions/bios"
+      }
+    },
+    "smbios_tables": {
+      "type": "array",
+      "description": "SMBIOS tables.",
+      "items": {
+        "$ref": "#/definitions/smbios"
+      }
+    },
+    "processors": {
+      "type": "array",
+      "description": "Processor packages.",
+      "items": {
+        "$ref": "#/definitions/processor"
+      }
+    },
+    "memory_sticks": {
+      "type": "array",
+      "description": "Memory modules.",
+      "items": {
+        "$ref": "#/definitions/memoryStick"
+      }
+    },
+    "batteries": {
+      "type": "array",
+      "description": "Batteries.",
+      "items": {
+        "$ref": "#/definitions/battery"
+      }
+    },
+    "monitors": {
+      "type": "array",
+      "description": "Monitors.",
+      "items": {
+        "$ref": "#/definitions/monitor"
+      }
+    },
+    "video_controllers": {
+      "type": "array",
+      "description": "Video controllers.",
+      "items": {
+        "$ref": "#/definitions/videoController"
+      }
+    },
+    "printers": {
+      "type": "array",
+      "description": "Printers.",
+      "items": {
+        "$ref": "#/definitions/printer"
+      }
+    },
+    "users": {
+      "type": "array",
+      "description": "Enabled local user accounts.",
+      "items": {
+        "$ref": "#/definitions/user"
+      }
+    },
+    "operating_systems": {
+      "type": "array",
+      "description": "Operating systems.",
+      "items": {
+        "$ref": "#/definitions/operatingSystem"
+      }
+    },
+    "wifis": {
+      "type": "array",
+      "description": "Wi-Fi access points around the computer (only with the Wi-Fi scan).",
+      "items": {
+        "$ref": "#/definitions/wifi"
+      }
+    },
+    "routers": {
+      "type": "array",
+      "description": "Networks reached through each interface.",
+      "items": {
+        "$ref": "#/definitions/router"
+      }
+    },
+    "network_signatures": {
+      "type": "array",
+      "description": "Networks this computer has connected to.",
+      "items": {
+        "$ref": "#/definitions/networkSignature"
+      }
+    },
+    "tpms": {
+      "type": "array",
+      "description": "Trusted platform modules.",
+      "items": {
+        "$ref": "#/definitions/tpm"
+      }
+    }
+  },
+  "definitions": {
+    "disk": {
+      "title": "HwDisk",
+      "description": "A physical disk.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "interface",
+        "model",
+        "serial_number",
+        "capacity",
+        "partitions",
+        "is_removable",
+        "is_smart",
+        "firmware",
+        "world_wide_name",
+        "disk_guid",
+        "instance_id",
+        "nvme_serial",
+        "nvme_eui64",
+        "nvme_nguid",
+        "nvme_fguid",
+        "ata_serial",
+        "ata_wwn",
+        "vpd_t10",
+        "vpd_eui64",
+        "vpd_nguid",
+        "vpd_naa",
+        "vpd_scsi_name",
+        "vpd_vendor",
+        "duid"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Device number of the disk (PhysicalDriveN), or its index when unknown.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "interface": {
+          "type": ["string", "null"],
+          "description": "Bus the disk is attached to, as WMI names it (IDE, SCSI, USB, 1394, ...)."
+        },
+        "model": {
+          "type": ["string", "null"],
+          "description": "Model, or the vendor and product identifiers when the disk has no friendly name."
+        },
+        "serial_number": {
+          "type": ["string", "null"],
+          "description": "Serial number from the storage device descriptor (the value WMI reports)."
+        },
+        "capacity": {
+          "type": ["string", "null"],
+          "description": "Capacity, in whole gigabytes (for example \"476 GB\")."
+        },
+        "partitions": {
+          "type": "integer",
+          "description": "Number of partitions.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "is_removable": {
+          "type": "boolean",
+          "description": "Whether the media is removable."
+        },
+        "is_smart": {
+          "type": "boolean",
+          "description": "Whether the disk supports SMART failure prediction."
+        },
+        "firmware": {
+          "type": ["string", "null"],
+          "description": "Firmware revision."
+        },
+        "world_wide_name": {
+          "type": ["string", "null"],
+          "description": "World Wide Name (NAA or EUI-64), in upper-case hexadecimal."
+        },
+        "disk_guid": {
+          "type": ["string", "null"],
+          "description": "GPT disk GUID, or the MBR disk signature as \"0x\" followed by 8 hexadecimal digits."
+        },
+        "instance_id": {
+          "type": ["string", "null"],
+          "description": "PnP device instance identifier."
+        },
+        "nvme_serial": {
+          "type": ["string", "null"],
+          "description": "Serial number from NVMe Identify Controller."
+        },
+        "nvme_eui64": {
+          "type": ["string", "null"],
+          "description": "IEEE EUI-64 of the first NVMe namespace."
+        },
+        "nvme_nguid": {
+          "type": ["string", "null"],
+          "description": "NGUID of the first NVMe namespace."
+        },
+        "nvme_fguid": {
+          "type": ["string", "null"],
+          "description": "FRU globally unique identifier of the NVMe controller."
+        },
+        "ata_serial": {
+          "type": ["string", "null"],
+          "description": "Serial number from ATA IDENTIFY DEVICE."
+        },
+        "ata_wwn": {
+          "type": ["string", "null"],
+          "description": "World Wide Name from ATA IDENTIFY DEVICE."
+        },
+        "vpd_t10": {
+          "type": ["string", "null"],
+          "description": "T10 vendor identifier of the SCSI device identification page."
+        },
+        "vpd_eui64": {
+          "type": ["string", "null"],
+          "description": "EUI-64 identifier of the SCSI device identification page."
+        },
+        "vpd_nguid": {
+          "type": ["string", "null"],
+          "description": "16-byte EUI (NGUID) identifier of the SCSI device identification page."
+        },
+        "vpd_naa": {
+          "type": ["string", "null"],
+          "description": "NAA identifier of the SCSI device identification page."
+        },
+        "vpd_scsi_name": {
+          "type": ["string", "null"],
+          "description": "SCSI name string of the SCSI device identification page."
+        },
+        "vpd_vendor": {
+          "type": ["string", "null"],
+          "description": "Vendor-specific identifier of the SCSI device identification page."
+        },
+        "duid": {
+          "type": ["string", "null"],
+          "description": "SHA-256 of the unique identifier (DUID) Windows computes for the disk, in lower-case hexadecimal.",
+          "pattern": "^[0-9a-f]{64}$"
+        }
+      }
+    },
+    "volume": {
+      "title": "HwVolume",
+      "description": "A volume.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "path", "letter", "serial_number"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "path": {
+          "type": ["string", "null"],
+          "description": "Volume GUID path (\\\\?\\Volume{...}\\)."
+        },
+        "letter": {
+          "type": ["string", "null"],
+          "description": "Drive letter with its colon (for example \"C:\"), or null when the volume has none."
+        },
+        "serial_number": {
+          "type": "integer",
+          "description": "Volume serial number.",
+          "minimum": 0,
+          "maximum": 4294967295
+        }
+      }
+    },
+    "networkAddress": {
+      "title": "HwNetworkAddress",
+      "description": "MAC addresses of a network adapter.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["current", "permanent"],
+      "properties": {
+        "current": {
+          "type": ["string", "null"],
+          "description": "Current MAC address, as upper-case hexadecimal pairs separated by colons.",
+          "pattern": "^([0-9A-F]{2}(:[0-9A-F]{2})*)?$"
+        },
+        "permanent": {
+          "type": ["string", "null"],
+          "description": "Permanent (burned-in) MAC address, as upper-case hexadecimal pairs separated by colons.",
+          "pattern": "^([0-9A-F]{2}(:[0-9A-F]{2})*)?$"
+        }
+      }
+    },
+    "networkAdapter": {
+      "title": "HwNetworkAdapter",
+      "description": "A physical network adapter.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "interface_id",
+        "name",
+        "interface_guid",
+        "service_name",
+        "address",
+        "is_physical",
+        "is_enabled",
+        "install_date",
+        "instance_id"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the adapter in the network adapter class (its registry key name, as in WMI's DeviceID).",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "interface_id": {
+          "type": "integer",
+          "description": "Interface index.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "name": {
+          "type": ["string", "null"],
+          "description": "Name."
+        },
+        "interface_guid": {
+          "type": ["string", "null"],
+          "description": "Interface GUID, in braces."
+        },
+        "service_name": {
+          "type": ["string", "null"],
+          "description": "Driver service name."
+        },
+        "address": {
+          "$ref": "#/definitions/networkAddress"
+        },
+        "is_physical": {
+          "type": "boolean",
+          "description": "Whether the adapter is physical."
+        },
+        "is_enabled": {
+          "type": "boolean",
+          "description": "Whether the adapter is enabled."
+        },
+        "install_date": {
+          "type": ["string", "null"],
+          "description": "Installation date of the adapter.",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,7})?(Z|[+-]\\d{2}:\\d{2})?$"
+        },
+        "instance_id": {
+          "type": ["string", "null"],
+          "description": "PnP device instance identifier."
+        }
+      }
+    },
+    "bluetoothRadio": {
+      "title": "HwBluetoothRadio",
+      "description": "A Bluetooth radio.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "address", "name", "manufacturer", "class_of_device", "lmp_subversion"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "address": {
+          "type": ["string", "null"],
+          "description": "Bluetooth address, as upper-case hexadecimal pairs separated by colons.",
+          "pattern": "^([0-9A-F]{2}(:[0-9A-F]{2})*)?$"
+        },
+        "name": {
+          "type": ["string", "null"],
+          "description": "Name of the radio."
+        },
+        "manufacturer": {
+          "type": "integer",
+          "description": "Bluetooth SIG company identifier of the manufacturer.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "class_of_device": {
+          "type": "integer",
+          "description": "Class of device.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "lmp_subversion": {
+          "type": "integer",
+          "description": "LMP subversion of the radio firmware.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        }
+      }
+    },
+    "baseboard": {
+      "title": "HwBaseboard",
+      "description": "A baseboard (SMBIOS type 2).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "manufacturer", "model", "version", "serial_number", "part_number"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "manufacturer": {
+          "type": ["string", "null"],
+          "description": "Manufacturer."
+        },
+        "model": {
+          "type": ["string", "null"],
+          "description": "Product name."
+        },
+        "version": {
+          "type": ["string", "null"],
+          "description": "Version."
+        },
+        "serial_number": {
+          "type": ["string", "null"],
+          "description": "Serial number."
+        },
+        "part_number": {
+          "type": ["string", "null"],
+          "description": "Part number (SMBIOS has no such field, so it is null)."
+        }
+      }
+    },
+    "motherboard": {
+      "title": "HwMotherboard",
+      "description": "The system (SMBIOS type 1).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "vendor", "version", "UUID"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "name": {
+          "type": ["string", "null"],
+          "description": "Product name."
+        },
+        "vendor": {
+          "type": ["string", "null"],
+          "description": "Manufacturer."
+        },
+        "version": {
+          "type": ["string", "null"],
+          "description": "Version."
+        },
+        "UUID": {
+          "type": "string",
+          "description": "System UUID, in lower-case hexadecimal (all zeros when unknown).",
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$"
+        }
+      }
+    },
+    "chassis": {
+      "title": "HwChassis",
+      "description": "A chassis or enclosure (SMBIOS type 3).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "manufacturer", "type", "type_name", "version", "serial_number", "asset_tag"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "manufacturer": {
+          "type": ["string", "null"],
+          "description": "Manufacturer."
+        },
+        "type": {
+          "type": "integer",
+          "description": "SMBIOS chassis type (3 = Desktop, 9 = Laptop, 10 = Notebook, ...).",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "type_name": {
+          "type": ["string", "null"],
+          "description": "Name of the chassis type."
+        },
+        "version": {
+          "type": ["string", "null"],
+          "description": "Version."
+        },
+        "serial_number": {
+          "type": ["string", "null"],
+          "description": "Serial number."
+        },
+        "asset_tag": {
+          "type": ["string", "null"],
+          "description": "Asset tag."
+        }
+      }
+    },
+    "bios": {
+      "title": "HwBios",
+      "description": "A BIOS firmware (SMBIOS type 0).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "manufacturer", "version", "serial_number"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "manufacturer": {
+          "type": ["string", "null"],
+          "description": "Vendor."
+        },
+        "version": {
+          "type": ["string", "null"],
+          "description": "Version."
+        },
+        "serial_number": {
+          "type": ["string", "null"],
+          "description": "System serial number (SMBIOS type 1), which is what WMI reports for the BIOS."
+        }
+      }
+    },
+    "smbios": {
+      "title": "HwSmbios",
+      "description": "The raw SMBIOS table.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "hash", "length"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "version": {
+          "type": ["string", "null"],
+          "description": "SMBIOS version (major.minor.revision)."
+        },
+        "hash": {
+          "type": ["string", "null"],
+          "description": "SHA-256 of the raw table, in lower-case hexadecimal.",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "length": {
+          "type": "integer",
+          "description": "Size of the table, in bytes.",
+          "minimum": 0,
+          "maximum": 4294967295
+        }
+      }
+    },
+    "processor": {
+      "title": "HwProcessor",
+      "description": "A processor package.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "manufacturer",
+        "model",
+        "model_number",
+        "socket",
+        "part_number",
+        "serial_number",
+        "clock_speed",
+        "voltage",
+        "channel",
+        "number_of_cores",
+        "number_of_logical_processors"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "manufacturer": {
+          "type": ["string", "null"],
+          "description": "Vendor identifier (for example \"GenuineIntel\")."
+        },
+        "model": {
+          "type": ["string", "null"],
+          "description": "Brand string (AMD pads it with spaces to 48 characters)."
+        },
+        "model_number": {
+          "type": ["string", "null"],
+          "description": "Processor ID, as 16 upper-case hexadecimal digits."
+        },
+        "socket": {
+          "type": ["string", "null"],
+          "description": "Socket designation."
+        },
+        "part_number": {
+          "type": ["string", "null"],
+          "description": "Part number."
+        },
+        "serial_number": {
+          "type": ["string", "null"],
+          "description": "Serial number."
+        },
+        "clock_speed": {
+          "type": ["string", "null"],
+          "description": "Clock speed (for example \"3696 MHz\")."
+        },
+        "voltage": {
+          "type": ["string", "null"],
+          "description": "Voltage (for example \"1.1 V\")."
+        },
+        "channel": {
+          "type": ["string", "null"],
+          "description": "Device identifier (CPU0, CPU1, ...)."
+        },
+        "number_of_cores": {
+          "type": "integer",
+          "description": "Number of cores.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "number_of_logical_processors": {
+          "type": "integer",
+          "description": "Number of logical processors.",
+          "minimum": 0,
+          "maximum": 4294967295
+        }
+      }
+    },
+    "memoryStick": {
+      "title": "HwMemoryStick",
+      "description": "A memory module (SMBIOS type 17).",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "manufacturer", "part_number", "serial_number", "capacity_in_gb", "clock_speed", "voltage", "channel"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "manufacturer": {
+          "type": ["string", "null"],
+          "description": "Manufacturer."
+        },
+        "part_number": {
+          "type": ["string", "null"],
+          "description": "Part number."
+        },
+        "serial_number": {
+          "type": ["string", "null"],
+          "description": "Serial number."
+        },
+        "capacity_in_gb": {
+          "type": ["string", "null"],
+          "description": "Capacity, in whole gigabytes (for example \"16 GB\")."
+        },
+        "clock_speed": {
+          "type": ["string", "null"],
+          "description": "Configured clock speed (for example \"3200 MHz\")."
+        },
+        "voltage": {
+          "type": ["string", "null"],
+          "description": "Configured voltage (for example \"1.20 V\")."
+        },
+        "channel": {
+          "type": ["string", "null"],
+          "description": "Device locator (for example \"DIMM_A1\")."
+        }
+      }
+    },
+    "battery": {
+      "title": "HwBattery",
+      "description": "A battery.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "device_name",
+        "manufacturer",
+        "serial_number",
+        "unique_id",
+        "chemistry",
+        "designed_capacity",
+        "full_charged_capacity",
+        "manufacture_date"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "device_name": {
+          "type": ["string", "null"],
+          "description": "Device name."
+        },
+        "manufacturer": {
+          "type": ["string", "null"],
+          "description": "Manufacturer."
+        },
+        "serial_number": {
+          "type": ["string", "null"],
+          "description": "Serial number."
+        },
+        "unique_id": {
+          "type": ["string", "null"],
+          "description": "Unique identifier reported by the battery."
+        },
+        "chemistry": {
+          "type": ["string", "null"],
+          "description": "Chemistry (for example \"LION\")."
+        },
+        "designed_capacity": {
+          "type": "integer",
+          "description": "Designed capacity, in mWh.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "full_charged_capacity": {
+          "type": "integer",
+          "description": "Full charged capacity, in mWh.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "manufacture_date": {
+          "type": ["string", "null"],
+          "description": "Manufacture date.",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,7})?(Z|[+-]\\d{2}:\\d{2})?$"
+        }
+      }
+    },
+    "monitor": {
+      "title": "HwMonitor",
+      "description": "A monitor, read from its EDID.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "manufacturer",
+        "name",
+        "product",
+        "serial_number",
+        "instance_id",
+        "edid_hash",
+        "manufacture_week",
+        "manufacture_year"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "manufacturer": {
+          "type": ["string", "null"],
+          "description": "Three-letter PnP manufacturer identifier."
+        },
+        "name": {
+          "type": ["string", "null"],
+          "description": "Monitor name."
+        },
+        "product": {
+          "type": ["string", "null"],
+          "description": "Product code, in hexadecimal."
+        },
+        "serial_number": {
+          "type": ["string", "null"],
+          "description": "Serial number (the descriptor string, or the numeric serial)."
+        },
+        "instance_id": {
+          "type": ["string", "null"],
+          "description": "PnP device instance identifier."
+        },
+        "edid_hash": {
+          "type": ["string", "null"],
+          "description": "SHA-256 of the EDID base block, in lower-case hexadecimal.",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "manufacture_week": {
+          "type": "integer",
+          "description": "Week of manufacture (0 when unknown).",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "manufacture_year": {
+          "type": "integer",
+          "description": "Year of manufacture (0 when unknown).",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        }
+      }
+    },
+    "videoController": {
+      "title": "HwVideo",
+      "description": "A video controller.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "width", "height", "refresh_rate", "driver_date", "driver_version", "instance_id"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "name": {
+          "type": ["string", "null"],
+          "description": "Name."
+        },
+        "width": {
+          "type": "integer",
+          "description": "Horizontal resolution of the active display mode (0 when no display is attached to the session).",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "height": {
+          "type": "integer",
+          "description": "Vertical resolution of the active display mode (0 when no display is attached to the session).",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "refresh_rate": {
+          "type": "integer",
+          "description": "Refresh rate of the active display mode, in Hz (0 when no display is attached to the session).",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "driver_date": {
+          "type": "string",
+          "description": "Driver date.",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,7})?(Z|[+-]\\d{2}:\\d{2})?$"
+        },
+        "driver_version": {
+          "type": ["string", "null"],
+          "description": "Driver version."
+        },
+        "instance_id": {
+          "type": ["string", "null"],
+          "description": "PnP device instance identifier."
+        }
+      }
+    },
+    "printer": {
+      "title": "HwPrinter",
+      "description": "A printer.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "port_name", "location", "width", "height"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "name": {
+          "type": ["string", "null"],
+          "description": "Name."
+        },
+        "port_name": {
+          "type": ["string", "null"],
+          "description": "Port name."
+        },
+        "location": {
+          "type": ["string", "null"],
+          "description": "Location."
+        },
+        "width": {
+          "type": "integer",
+          "description": "Horizontal resolution, in DPI.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "height": {
+          "type": "integer",
+          "description": "Vertical resolution, in DPI.",
+          "minimum": 0,
+          "maximum": 4294967295
+        }
+      }
+    },
+    "user": {
+      "title": "HwUser",
+      "description": "An enabled local user account.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "username", "full_name", "sid", "domain", "install_date"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "username": {
+          "type": ["string", "null"],
+          "description": "User name."
+        },
+        "full_name": {
+          "type": ["string", "null"],
+          "description": "Full name."
+        },
+        "sid": {
+          "type": ["string", "null"],
+          "description": "Security identifier."
+        },
+        "domain": {
+          "type": ["string", "null"],
+          "description": "Domain (the computer name for local accounts)."
+        },
+        "install_date": {
+          "type": "string",
+          "description": "Install date (Windows does not record one, so it is the default value).",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,7})?(Z|[+-]\\d{2}:\\d{2})?$"
+        }
+      }
+    },
+    "operatingSystem": {
+      "title": "HwOperatingSystem",
+      "description": "The operating system.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "name",
+        "version",
+        "architecture",
+        "registered_user",
+        "serial_number",
+        "install_date",
+        "last_boot_up_time",
+        "machine_guid",
+        "sqm_machine_id",
+        "hardware_profile_guid",
+        "install_time",
+        "machine_sid"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "name": {
+          "type": ["string", "null"],
+          "description": "Name."
+        },
+        "version": {
+          "type": ["string", "null"],
+          "description": "Version (major.minor.build)."
+        },
+        "architecture": {
+          "type": ["string", "null"],
+          "description": "Architecture (\"64-bit\", \"32-bit\", \"ARM 64-bit\" or \"ARM 32-bit\")."
+        },
+        "registered_user": {
+          "type": ["string", "null"],
+          "description": "Registered owner."
+        },
+        "serial_number": {
+          "type": ["string", "null"],
+          "description": "Product identifier."
+        },
+        "install_date": {
+          "type": "string",
+          "description": "Install date.",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,7})?(Z|[+-]\\d{2}:\\d{2})?$"
+        },
+        "last_boot_up_time": {
+          "type": "string",
+          "description": "Last boot time.",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,7})?(Z|[+-]\\d{2}:\\d{2})?$"
+        },
+        "machine_guid": {
+          "type": ["string", "null"],
+          "description": "Machine GUID generated by Windows at installation."
+        },
+        "sqm_machine_id": {
+          "type": ["string", "null"],
+          "description": "SQM (telemetry) machine identifier."
+        },
+        "hardware_profile_guid": {
+          "type": ["string", "null"],
+          "description": "Hardware profile GUID."
+        },
+        "install_time": {
+          "type": ["string", "null"],
+          "description": "Precise installation time.",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(\\.\\d{1,7})?(Z|[+-]\\d{2}:\\d{2})?$"
+        },
+        "machine_sid": {
+          "type": ["string", "null"],
+          "description": "Security identifier of the machine."
+        }
+      }
+    },
+    "wifi": {
+      "title": "HwWifi",
+      "description": "A Wi-Fi access point seen during the scan. The measurements keep their historical PascalCase names.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "ssid", "bssid", "Strength", "Channel", "Frequency", "Band", "Quality"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "ssid": {
+          "type": ["string", "null"],
+          "description": "SSID."
+        },
+        "bssid": {
+          "type": ["string", "null"],
+          "description": "BSSID, as upper-case hexadecimal pairs separated by colons.",
+          "pattern": "^([0-9A-F]{2}(:[0-9A-F]{2})*)?$"
+        },
+        "Strength": {
+          "type": "integer",
+          "description": "Received signal strength, in dBm.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "Channel": {
+          "type": "integer",
+          "description": "Channel number.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "Frequency": {
+          "type": "integer",
+          "description": "Center frequency, in kHz.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "Band": {
+          "type": "number",
+          "description": "Band, in GHz (2.4, 5 or 6; 0 when unknown)."
+        },
+        "Quality": {
+          "type": "integer",
+          "description": "Link quality, from 0 to 100.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        }
+      }
+    },
+    "networkDevice": {
+      "title": "HwNetworkDevice",
+      "description": "A device on the local network.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mac_address", "ip_address"],
+      "properties": {
+        "mac_address": {
+          "type": ["string", "null"],
+          "description": "MAC address, as upper-case hexadecimal pairs separated by colons.",
+          "pattern": "^([0-9A-F]{2}(:[0-9A-F]{2})*)?$"
+        },
+        "ip_address": {
+          "type": ["string", "null"],
+          "description": "IP address."
+        }
+      }
+    },
+    "router": {
+      "title": "HwRouter",
+      "description": "The network reached through one interface.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "gateways", "dns_servers", "dhcp_servers", "network_devices"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "gateways": {
+          "type": "array",
+          "description": "Default gateways.",
+          "items": {
+            "$ref": "#/definitions/networkDevice"
+          }
+        },
+        "dns_servers": {
+          "type": "array",
+          "description": "DNS server addresses (IPv4 and IPv6).",
+          "items": {
+            "type": "string"
+          }
+        },
+        "dhcp_servers": {
+          "type": "array",
+          "description": "DHCP server addresses.",
+          "items": {
+            "type": "string"
+          }
+        },
+        "network_devices": {
+          "type": "array",
+          "description": "Devices found on the local network (only with the local network scan).",
+          "items": {
+            "$ref": "#/definitions/networkDevice"
+          }
+        }
+      }
+    },
+    "networkSignature": {
+      "title": "HwNetworkSignature",
+      "description": "A network this computer has connected to.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "profile_guid", "name", "gateway_address"],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "profile_guid": {
+          "type": ["string", "null"],
+          "description": "Network profile GUID."
+        },
+        "name": {
+          "type": ["string", "null"],
+          "description": "Network name."
+        },
+        "gateway_address": {
+          "type": ["string", "null"],
+          "description": "MAC address of the default gateway (an empty string when unknown).",
+          "pattern": "^([0-9A-F]{2}(:[0-9A-F]{2})*)?$"
+        }
+      }
+    },
+    "tpmProperty": {
+      "title": "HwTpmProperty",
+      "description": "A raw TPM 2.0 property.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["property", "value"],
+      "properties": {
+        "property": {
+          "type": "integer",
+          "description": "TPM_PT identifier.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "value": {
+          "type": "integer",
+          "description": "Raw value.",
+          "minimum": 0,
+          "maximum": 4294967295
+        }
+      }
+    },
+    "tpmAlgorithm": {
+      "title": "HwTpmAlgorithm",
+      "description": "A supported TPM 2.0 algorithm.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "attributes"],
+      "properties": {
+        "algorithm": {
+          "type": "integer",
+          "description": "TPM_ALG_ID identifier.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "attributes": {
+          "type": "integer",
+          "description": "TPMA_ALGORITHM flags.",
+          "minimum": 0,
+          "maximum": 4294967295
+        }
+      }
+    },
+    "tpmPcrBank": {
+      "title": "HwTpmPcrBank",
+      "description": "An allocated TPM 2.0 PCR bank.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["algorithm", "selection"],
+      "properties": {
+        "algorithm": {
+          "type": "integer",
+          "description": "Hash TPM_ALG_ID of the bank.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "selection": {
+          "type": ["string", "null"],
+          "description": "Selected PCR bitmap, in upper-case hexadecimal.",
+          "pattern": "^[0-9A-F]*$"
+        }
+      }
+    },
+    "tpmCertificate": {
+      "title": "HwTpmCertificate",
+      "description": "A certificate.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "source",
+        "subject",
+        "issuer",
+        "serial_number",
+        "not_before",
+        "not_after",
+        "signature_algorithm",
+        "public_key_algorithm",
+        "sha256",
+        "der"
+      ],
+      "properties": {
+        "source": {
+          "type": ["string", "null"],
+          "description": "Where the certificate was read from."
+        },
+        "subject": {
+          "type": ["string", "null"],
+          "description": "Subject."
+        },
+        "issuer": {
+          "type": ["string", "null"],
+          "description": "Issuer."
+        },
+        "serial_number": {
+          "type": ["string", "null"],
+          "description": "Serial number, in upper-case hexadecimal."
+        },
+        "not_before": {
+          "type": ["string", "null"],
+          "description": "Validity start, in UTC.",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "not_after": {
+          "type": ["string", "null"],
+          "description": "Validity end, in UTC.",
+          "pattern": "^\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z$"
+        },
+        "signature_algorithm": {
+          "type": ["string", "null"],
+          "description": "Signature algorithm OID."
+        },
+        "public_key_algorithm": {
+          "type": ["string", "null"],
+          "description": "Public key algorithm OID."
+        },
+        "sha256": {
+          "type": ["string", "null"],
+          "description": "SHA-256 of the DER certificate, in lower-case hexadecimal.",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "der": {
+          "type": ["string", "null"],
+          "description": "DER certificate, encoded as Base64.",
+          "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
+        }
+      }
+    },
+    "tpmKey": {
+      "title": "HwTpmKey",
+      "description": "A public TPM key.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "kind",
+        "name",
+        "scope",
+        "algorithm",
+        "length",
+        "unique_name",
+        "usage",
+        "tpm_usage",
+        "public_key_blob",
+        "public_key_sha256",
+        "certificates"
+      ],
+      "properties": {
+        "kind": {
+          "type": ["string", "null"],
+          "description": "Key kind.",
+          "enum": ["Endorsement", "StorageRoot", "Persisted", null]
+        },
+        "name": {
+          "type": ["string", "null"],
+          "description": "Provider property or persisted key name."
+        },
+        "scope": {
+          "type": ["string", "null"],
+          "description": "Key scope.",
+          "enum": ["Platform", "CurrentUser", "LocalMachine", null]
+        },
+        "algorithm": {
+          "type": ["string", "null"],
+          "description": "CNG algorithm name."
+        },
+        "length": {
+          "type": ["integer", "null"],
+          "description": "Key length, in bits.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "unique_name": {
+          "type": ["string", "null"],
+          "description": "Unique persisted key name."
+        },
+        "usage": {
+          "type": ["integer", "null"],
+          "description": "NCRYPT_KEY_USAGE_PROPERTY flags.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "tpm_usage": {
+          "type": ["integer", "null"],
+          "description": "PCP_KEY_USAGE_POLICY flags (8 denotes an identity key).",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "public_key_blob": {
+          "type": ["string", "null"],
+          "description": "BCRYPT public key blob, encoded as Base64.",
+          "pattern": "^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$"
+        },
+        "public_key_sha256": {
+          "type": ["string", "null"],
+          "description": "SHA-256 of the public key blob, in lower-case hexadecimal.",
+          "pattern": "^[0-9a-f]{64}$"
+        },
+        "certificates": {
+          "type": "array",
+          "description": "Certificates associated with the key.",
+          "items": {
+            "$ref": "#/definitions/tpmCertificate"
+          }
+        }
+      }
+    },
+    "tpmError": {
+      "title": "HwTpmError",
+      "description": "A TPM query that failed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["operation", "source", "code"],
+      "properties": {
+        "operation": {
+          "type": ["string", "null"],
+          "description": "Failed query or property."
+        },
+        "source": {
+          "type": ["string", "null"],
+          "description": "Error domain.",
+          "enum": ["TBS", "TPM", "NCrypt", "Win32", null]
+        },
+        "code": {
+          "type": "integer",
+          "description": "Raw error code in its domain.",
+          "minimum": 0,
+          "maximum": 4294967295
+        }
+      }
+    },
+    "tpm": {
+      "title": "HwTpm",
+      "description": "A trusted platform module. Values the TPM does not support or that are restricted stay null.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "version",
+        "interface_type",
+        "implementation_revision",
+        "manufacturer_id",
+        "manufacturer",
+        "vendor_string",
+        "family",
+        "specification_level",
+        "specification_revision",
+        "specification_year",
+        "specification_day_of_year",
+        "firmware_version1",
+        "firmware_version2",
+        "permanent_flags",
+        "startup_clear_flags",
+        "is_owner_auth_set",
+        "is_endorsement_auth_set",
+        "is_lockout_auth_set",
+        "is_in_lockout",
+        "lockout_counter",
+        "max_auth_fail",
+        "lockout_interval",
+        "lockout_recovery",
+        "properties",
+        "algorithms",
+        "pcr_banks",
+        "keys",
+        "certificates",
+        "errors"
+      ],
+      "properties": {
+        "id": {
+          "type": "integer",
+          "description": "Index of the entry in its list.",
+          "minimum": -2147483648,
+          "maximum": 2147483647
+        },
+        "version": {
+          "type": ["string", "null"],
+          "description": "TPM generation.",
+          "enum": ["1.2", "2.0", null]
+        },
+        "interface_type": {
+          "type": ["integer", "null"],
+          "description": "TPM_IFTYPE value reported by TBS.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "implementation_revision": {
+          "type": ["integer", "null"],
+          "description": "TBS implementation revision.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "manufacturer_id": {
+          "type": ["integer", "null"],
+          "description": "Numeric TCG manufacturer identifier.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "manufacturer": {
+          "type": ["string", "null"],
+          "description": "Four-character TCG manufacturer identifier."
+        },
+        "vendor_string": {
+          "type": ["string", "null"],
+          "description": "Vendor string."
+        },
+        "family": {
+          "type": ["string", "null"],
+          "description": "Specification family."
+        },
+        "specification_level": {
+          "type": ["integer", "null"],
+          "description": "Specification level.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "specification_revision": {
+          "type": ["integer", "null"],
+          "description": "Specification revision, in hundredths.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "specification_year": {
+          "type": ["integer", "null"],
+          "description": "Specification year.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "specification_day_of_year": {
+          "type": ["integer", "null"],
+          "description": "Specification day of year.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "firmware_version1": {
+          "type": ["integer", "null"],
+          "description": "First vendor-defined firmware version word.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "firmware_version2": {
+          "type": ["integer", "null"],
+          "description": "Second vendor-defined firmware version word.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "permanent_flags": {
+          "type": ["integer", "null"],
+          "description": "TPMA_PERMANENT flags.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "startup_clear_flags": {
+          "type": ["integer", "null"],
+          "description": "TPMA_STARTUP_CLEAR flags.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "is_owner_auth_set": {
+          "type": ["boolean", "null"],
+          "description": "Whether owner authorization is set."
+        },
+        "is_endorsement_auth_set": {
+          "type": ["boolean", "null"],
+          "description": "Whether endorsement authorization is set."
+        },
+        "is_lockout_auth_set": {
+          "type": ["boolean", "null"],
+          "description": "Whether lockout authorization is set."
+        },
+        "is_in_lockout": {
+          "type": ["boolean", "null"],
+          "description": "Whether dictionary-attack lockout is active."
+        },
+        "lockout_counter": {
+          "type": ["integer", "null"],
+          "description": "Dictionary-attack failure counter.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "max_auth_fail": {
+          "type": ["integer", "null"],
+          "description": "Dictionary-attack failure limit.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "lockout_interval": {
+          "type": ["integer", "null"],
+          "description": "Counter recovery interval, in seconds.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "lockout_recovery": {
+          "type": ["integer", "null"],
+          "description": "Lockout authorization recovery interval, in seconds.",
+          "minimum": 0,
+          "maximum": 4294967295
+        },
+        "properties": {
+          "type": "array",
+          "description": "Raw fixed and variable TPM 2.0 properties.",
+          "items": {
+            "$ref": "#/definitions/tpmProperty"
+          }
+        },
+        "algorithms": {
+          "type": "array",
+          "description": "Supported TPM 2.0 algorithms.",
+          "items": {
+            "$ref": "#/definitions/tpmAlgorithm"
+          }
+        },
+        "pcr_banks": {
+          "type": "array",
+          "description": "Allocated TPM 2.0 PCR banks.",
+          "items": {
+            "$ref": "#/definitions/tpmPcrBank"
+          }
+        },
+        "keys": {
+          "type": "array",
+          "description": "Accessible public TPM keys.",
+          "items": {
+            "$ref": "#/definitions/tpmKey"
+          }
+        },
+        "certificates": {
+          "type": "array",
+          "description": "Endorsement certificates.",
+          "items": {
+            "$ref": "#/definitions/tpmCertificate"
+          }
+        },
+        "errors": {
+          "type": "array",
+          "description": "Queries that failed.",
+          "items": {
+            "$ref": "#/definitions/tpmError"
+          }
+        }
+      }
+    }
+  }
+}

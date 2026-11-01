@@ -29,6 +29,7 @@ user can be recognised even on an entirely new computer sitting in the same plac
 - **WMI-compatible values.** The historical fields hold the exact strings WMI reports, so identifiers collected by
   earlier versions keep matching.
 - **Serializable.** The result is a plain object with `System.Text.Json` attributes; serialize it and store it as is.
+  A [JSON schema](#json-schema) describes the output, so other applications can validate the snapshots they receive.
 - **Tested.** 130+ unit and integration tests, the latter checking every collector against WMI as an independent oracle.
 - **C and C++ too.** [`HardwareIds.Cpp`](#c-and-c) is a native port that writes the very same JSON, byte for byte.
 
@@ -172,6 +173,41 @@ A drive legitimately reports different serial numbers depending on the layer ask
 reports (for NVMe drives, Windows derives it from the EUI-64), while `nvme_serial` or `ata_serial` is the serial printed
 on the label. All of them are kept, each in its own field.
 
+### JSON schema
+
+[`hwid.schema.json`](hwid.schema.json) is a [JSON Schema](https://json-schema.org) (draft-07) of the snapshot, for
+applications that receive snapshots and must validate them. It matches what both the .NET library (serialized with the
+default `JsonSerializerOptions`) and the C++ port write. Each release has a copy of the file attached.
+
+The schema is strict, and versioned with the library:
+
+- Every property is required, and unknown properties are rejected. A snapshot from a newer version that adds fields
+  fails the older schema; validate it with the schema of the version that produced it.
+- Strings the library may leave unset are `string` or `null`. Numbers are bounded to their 32-bit range.
+- Values whose format the library controls are checked: dates, the system UUID, MAC addresses (upper-case hexadecimal
+  pairs separated by colons), SHA-256 hashes (lower-case hexadecimal), Base64 data and the TPM enumerations. Free-form
+  strings such as serial numbers and names are not constrained.
+- The Wi-Fi measurements keep their historical PascalCase names (`Strength`, `Channel`, `Frequency`, `Band`, `Quality`).
+  A custom `PropertyNamingPolicy` changes them, so serialize with the default options for the schema to apply.
+
+Validating a snapshot in PHP (Laravel, for example) with [opis/json-schema](https://opis.io/json-schema):
+
+```php
+use Opis\JsonSchema\Validator;
+
+$Result = (new Validator())->validate(
+    json_decode($request->getContent()),   // decode to objects, not associative arrays
+    file_get_contents(resource_path('schemas/hwid.schema.json'))
+);
+
+if (!$Result->isValid()) {
+    abort(422, 'Invalid hardware snapshot.');
+}
+```
+
+The tests validate scans of the machine and synthetic snapshots against the schema, so a change to the serialized
+properties fails until the schema follows.
+
 ## C and C++
 
 [`HardwareIds.Cpp`](HardwareIds.Cpp) is a port of the library to C++20 for native programs. It runs the same collectors
@@ -299,7 +335,7 @@ git push origin v2.1.0
 
 The `Publish` workflow builds and tests the solution, packs the library with the tag as its version, pushes it to
 NuGet.org and GitHub Packages, and attaches the packages to a GitHub release with generated notes, along with the zip of
-the C++ library. A tag with a pre-release suffix (`v2.1.0-beta.1`) produces a pre-release.
+the C++ library and `hwid.schema.json`. A tag with a pre-release suffix (`v2.1.0-beta.1`) produces a pre-release.
 
 No secret is involved: NuGet.org is reached through [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing),
 which exchanges the workflow's OIDC token for a one-hour API key, and GitHub Packages uses the built-in token. The

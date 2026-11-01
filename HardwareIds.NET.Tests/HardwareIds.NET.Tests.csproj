@@ -16,10 +16,15 @@
     <PackageReference Include="xunit.runner.visualstudio" Version="4.0.0" />
     <PackageReference Include="System.Management" Version="10.0.12" />
     <PackageReference Include="System.Text.Json" Version="10.0.12" Condition="'$(TargetFramework)' == 'net48'" />
+    <PackageReference Include="NJsonSchema" Version="11.6.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\HardwareIds.NET\HardwareIds.NET.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\hwid.schema.json" Link="hwid.schema.json" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

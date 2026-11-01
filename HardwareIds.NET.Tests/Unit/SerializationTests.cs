@@ -41,7 +41,7 @@
             ["network_signatures"] = ["id", "profile_guid", "name", "gateway_address"],
         };
 
-        private static Hwid BuildPopulatedHwid()
+        internal static Hwid BuildPopulatedHwid()
         {
             var Hwid = new Hwid();
             Hwid.Tpms.Add(new HwTpm { Id = 0, Version = "2.0" });
