@@ -2,6 +2,7 @@
 {
     using System.Collections.Generic;
     using System.Linq;
+    using System.Text.Json;
     using System.Text.Json.Serialization;
 
     using global::HardwareIds.NET.Structures.Components;
@@ -259,5 +260,21 @@
         /// </summary>
         [JsonIgnore]
         public HwTpm? Tpm => this.Tpms?.FirstOrDefault();
+
+        /// <summary>
+        /// Gets or sets the version of the library that produced the snapshot ("2.4.0"), the one whose JSON schema describes it.
+        /// </summary>
+        [JsonPropertyName("library_version")]
+        public string LibraryVersion { get; set; } = global::HardwareIds.NET.HardwareIds.Version;
+
+        /// <summary>
+        /// Serializes the snapshot, exactly as <c>JsonSerializer.Serialize(Hwid)</c> does, through the source-generated
+        /// <see cref="HwidJsonContext"/>: it works in trimmed and Native AOT applications, where reflection-based serialization does not.
+        /// </summary>
+        /// <param name="InIndented">Whether to indent the JSON.</param>
+        public string ToJson(bool InIndented = false)
+        {
+            return JsonSerializer.Serialize(this, InIndented ? HwidJsonContext.Indented.Hwid : HwidJsonContext.Default.Hwid);
+        }
     }
 }

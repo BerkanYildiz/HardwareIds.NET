@@ -72,7 +72,7 @@
                 if (!EnumPrintersW(Flags, null, 2, BufferPtr, Needed, out Needed, out var Returned))
                     return Result;
 
-                var Stride = Marshal.SizeOf(typeof(PRINTER_INFO_2));
+                var Stride = Marshal.SizeOf<PRINTER_INFO_2>();
 
                 for (var I = 0; I < Returned; I++)
                 {

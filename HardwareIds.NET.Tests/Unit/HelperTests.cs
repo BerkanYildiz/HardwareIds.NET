@@ -184,11 +184,11 @@
             Assert.Null(Empty.NetworkSignature);
 
             //
-            // Every list has a getter for its first entry.
+            // Every list has a getter for its first entry; the library version is the only other property.
             //
 
             var Lists = typeof(Hwid).GetProperties().Where(T => T.PropertyType.IsGenericType).Select(T => T.PropertyType.GetGenericArguments()[0]).ToList();
-            var Getters = typeof(Hwid).GetProperties().Where(T => !T.PropertyType.IsGenericType).Select(T => T.PropertyType).ToList();
+            var Getters = typeof(Hwid).GetProperties().Where(T => !T.PropertyType.IsGenericType && T.Name != nameof(Hwid.LibraryVersion)).Select(T => T.PropertyType).ToList();
             Assert.Equal(Lists.OrderBy(T => T.Name), Getters.OrderBy(T => T.Name));
 
             var Populated = new Hwid();

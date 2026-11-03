@@ -39,6 +39,14 @@ jobs:
         shell: pwsh
         run: ./.github/scripts/test.ps1
 
+      # The library is marked AOT-compatible: a Native AOT build of the Testing tool must print the same snapshot as the JIT one.
+      - name: Publish the Testing tool with Native AOT
+        run: dotnet publish HardwareIds.NET.Testing --configuration Release --runtime win-x64 --output build/aot -warnaserror
+
+      - name: Compare the Native AOT and JIT snapshots
+        shell: pwsh
+        run: ./.github/scripts/parity.ps1 -Snapshot build/aot/HardwareIds.NET.Testing.exe -SnapshotArguments --json -SnapshotName 'Native AOT'
+
       - name: Upload package
         uses: actions/upload-artifact@v7
         with:

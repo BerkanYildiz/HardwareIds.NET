@@ -1,0 +1,16 @@
+<Project>
+
+  <!--
+    Settings shared by every project of the solution.
+
+    The version has a single source, the VERSION file at the root of the repository, which HardwareIds.Cpp/CMakeLists.txt
+    reads as well, so both libraries write the same library_version in their snapshots. The Publish workflow refuses a
+    tag that does not match it.
+  -->
+
+  <PropertyGroup>
+    <Version>$([System.IO.File]::ReadAllText('$(MSBuildThisFileDirectory)VERSION').Trim())</Version>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+  </PropertyGroup>
+
+</Project>

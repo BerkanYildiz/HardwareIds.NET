@@ -559,6 +559,7 @@ namespace HardwareIds
             });
         });
 
+        W.Name("library_version"); W.String(std::wstring_view(InHwid.LibraryVersion));
         W.EndObject();
         return std::move(W.Output);
     }

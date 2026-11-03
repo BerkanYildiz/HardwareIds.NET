@@ -394,6 +394,11 @@ namespace HardwareIds
     };
 
     /// <summary>
+    /// The version of the library (L"2.4.0"), the one every snapshot carries in Hwid::LibraryVersion. Like HardwareIds.Version in .NET.
+    /// </summary>
+    std::wstring Version();
+
+    /// <summary>
     /// Everything collected about the computer. Each list follows the order of the .NET library.
     /// </summary>
     struct Hwid
@@ -419,6 +424,11 @@ namespace HardwareIds
         std::vector<HwRouter> Routers;
         std::vector<HwNetworkSignature> NetworkSignatures;
         std::vector<HwTpm> Tpms;
+
+        /// <summary>
+        /// The version of the library that produced the snapshot (L"2.4.0"), the one whose JSON schema describes it.
+        /// </summary>
+        std::wstring LibraryVersion = HardwareIds::Version();
     };
 
     struct HardwareIdsConfig

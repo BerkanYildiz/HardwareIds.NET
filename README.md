@@ -29,8 +29,10 @@ user can be recognised even on an entirely new computer sitting in the same plac
 - **WMI-compatible values.** The historical fields hold the exact strings WMI reports, so identifiers collected by
   earlier versions keep matching.
 - **Serializable.** The result is a plain object with `System.Text.Json` attributes; serialize it and store it as is.
-  A [JSON schema](#json-schema) describes the output, so other applications can validate the snapshots they receive.
-- **Tested.** 130+ unit and integration tests, the latter checking every collector against WMI as an independent oracle.
+  Every snapshot carries the `library_version` that produced it, and a [JSON schema](#json-schema) describes the
+  output, so other applications can validate the snapshots they receive. `Hwid.ToJson()` and the source-generated
+  `HwidJsonContext` write the same JSON without reflection, for trimmed and Native AOT applications.
+- **Tested.** 270+ unit and integration tests, the latter checking every collector against WMI as an independent oracle.
 - **C and C++ too.** [`HardwareIds.Cpp`](#c-and-c) is a native port that writes the very same JSON, byte for byte.
 
 ## What is collected
@@ -98,8 +100,12 @@ foreach (var Device in Hwid.Router?.NetworkDevices ?? [])
 ```
 
 ```csharp
-// The result serializes as is, with stable snake_case property names.
+// The result serializes as is, with stable snake_case property names; its last property, library_version, is the
+// version of the library that produced it ("2.4.0", also HardwareIds.Version).
 var Json = JsonSerializer.Serialize(Hwid);
+
+// The very same JSON without reflection, for trimmed and Native AOT applications.
+Json = Hwid.ToJson();   // or JsonSerializer.Serialize(Hwid, HwidJsonContext.Default.Hwid)
 ```
 
 Every section is a list, and each has a convenience getter for its first entry (`Hwid.Disk`, `Hwid.Processor`,
@@ -177,12 +183,14 @@ on the label. All of them are kept, each in its own field.
 
 [`hwid.schema.json`](hwid.schema.json) is a [JSON Schema](https://json-schema.org) (draft-07) of the snapshot, for
 applications that receive snapshots and must validate them. It matches what both the .NET library (serialized with the
-default `JsonSerializerOptions`) and the C++ port write. Each release has a copy of the file attached.
+default `JsonSerializerOptions`, or `Hwid.ToJson()`) and the C++ port write. Each release has a copy of the file attached.
 
 The schema is strict, and versioned with the library:
 
-- Every property is required, and unknown properties are rejected. A snapshot from a newer version that adds fields
-  fails the older schema; validate it with the schema of the version that produced it.
+- Every property is required, and unknown properties are rejected, so a snapshot only validates against the schema of
+  the version that produced it. That version is in the snapshot, `library_version` (`"2.4.0"`): keep the schema of
+  every release you accept, read the property first and validate with the matching schema. Snapshots from versions
+  before 2.4.0 have no `library_version`.
 - Strings the library may leave unset are `string` or `null`. Numbers are bounded to their 32-bit range.
 - Values whose format the library controls are checked: dates, the system UUID, MAC addresses (upper-case hexadecimal
   pairs separated by colons), SHA-256 hashes (lower-case hexadecimal), Base64 data and the TPM enumerations. Free-form
@@ -195,10 +203,14 @@ Validating a snapshot in PHP (Laravel, for example) with [opis/json-schema](http
 ```php
 use Opis\JsonSchema\Validator;
 
-$Result = (new Validator())->validate(
-    json_decode($request->getContent()),   // decode to objects, not associative arrays
-    file_get_contents(resource_path('schemas/hwid.schema.json'))
-);
+$Snapshot = json_decode($request->getContent());   // decode to objects, not associative arrays
+$Version = $Snapshot->library_version ?? '2.3.0';  // absent before 2.4.0; each release attaches hwid-<version>.schema.json
+
+if (!preg_match('/^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$/', $Version) || !is_file(resource_path("schemas/hwid-$Version.schema.json"))) {
+    abort(422, 'Unsupported hardware snapshot version.');
+}
+
+$Result = (new Validator())->validate($Snapshot, file_get_contents(resource_path("schemas/hwid-$Version.schema.json")));
 
 if (!$Result->isValid()) {
     abort(422, 'Invalid hardware snapshot.');
@@ -243,6 +255,7 @@ auto Hwid = HardwareIds::GetHwid();
 
 std::string Json = HardwareIds::ToJson(Hwid);                                     // JsonSerializer.Serialize(Hwid)
 std::string Pretty = HardwareIds::ToJson(Hwid, HardwareIds::JsonFormat::Indented); // ... with WriteIndented = true
+std::wstring Version = HardwareIds::Version();                                    // L"2.4.0", the Hwid.LibraryVersion of every snapshot
 
 for (const auto& Disk : Hwid.Disks)
     std::wcout << Disk.Model.value_or(L"?") << L"  " << Disk.NvmeSerial.value_or(Disk.SerialNumber.value_or(L"")) << L'\n';
@@ -326,16 +339,20 @@ ctest --test-dir HardwareIds.Cpp/build --build-config Release
 
 ## Releasing
 
-Pushing a version tag publishes the package:
+1. Write the new version in [`VERSION`](VERSION), the single source of the version of both libraries.
+2. Describe the release in [`CHANGELOG.md`](CHANGELOG.md), under a dated `## [2.4.0] - 2026-11-03` heading.
+3. Commit, then push a tag carrying the same version:
 
 ```bash
-git tag v2.1.0
-git push origin v2.1.0
+git tag v2.4.0
+git push origin v2.4.0
 ```
 
-The `Publish` workflow builds and tests the solution, packs the library with the tag as its version, pushes it to
-NuGet.org and GitHub Packages, and attaches the packages to a GitHub release with generated notes, along with the zip of
-the C++ library and `hwid.schema.json`. A tag with a pre-release suffix (`v2.1.0-beta.1`) produces a pre-release.
+The `Publish` workflow refuses a tag whose version differs from `VERSION` or has no dated `CHANGELOG.md` section. It
+builds and tests the solution, packs the library with the changelog section as its release notes, pushes it to NuGet.org
+and GitHub Packages, and attaches the packages to a GitHub release whose body is that section followed by the generated
+notes, along with the zip of the C++ library and `hwid.schema.json`. A tag with a pre-release suffix (`v2.4.0-beta.1`)
+produces a pre-release.
 
 No secret is involved: NuGet.org is reached through [Trusted Publishing](https://learn.microsoft.com/nuget/nuget-org/trusted-publishing),
 which exchanges the workflow's OIDC token for a one-hour API key, and GitHub Packages uses the built-in token. The

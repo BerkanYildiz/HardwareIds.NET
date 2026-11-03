@@ -5,6 +5,8 @@
     <TargetFramework>net10.0-windows</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <!-- A runtime-specific publish (dotnet publish -r win-x64) compiles the tool with Native AOT; CI compares its snapshot with the JIT one. -->
+    <PublishAot Condition="'$(RuntimeIdentifier)' != ''">true</PublishAot>
   </PropertyGroup>
 
   <ItemGroup>

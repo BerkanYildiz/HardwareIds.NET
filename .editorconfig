@@ -1,0 +1,15 @@
+root = true
+
+[*]
+indent_style = space
+indent_size = 4
+
+[*.{yml,yaml,json}]
+indent_size = 2
+
+[*.cs]
+# Block-scoped namespaces, with the using directives inside the namespace. Enforced at build time (EnforceCodeStyleInBuild).
+csharp_style_namespace_declarations = block_scoped:warning
+csharp_using_directive_placement = inside_namespace:warning
+dotnet_diagnostic.IDE0160.severity = warning
+dotnet_diagnostic.IDE0065.severity = warning

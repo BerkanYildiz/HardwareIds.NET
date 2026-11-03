@@ -2,7 +2,7 @@
   "$schema": "http://json-schema.org/draft-07/schema#",
   "$id": "https://raw.githubusercontent.com/BerkanYildiz/HardwareIds.NET/master/hwid.schema.json",
   "title": "Hwid",
-  "description": "A hardware snapshot, as serialized by HardwareIds.NET (System.Text.Json with the default options) and printed by HardwareIds.Cpp (HardwareIds_GetSnapshotJson, HardwareIdsSnapshot).",
+  "description": "A hardware snapshot, as serialized by HardwareIds.NET (System.Text.Json with the default options, or Hwid.ToJson) and printed by HardwareIds.Cpp (HardwareIds_GetSnapshotJson, HardwareIdsSnapshot). The schema is strict and versioned with the library: library_version names the version, and so the schema, of the snapshot.",
   "type": "object",
   "additionalProperties": false,
   "required": [
@@ -26,7 +26,8 @@
     "wifis",
     "routers",
     "network_signatures",
-    "tpms"
+    "tpms",
+    "library_version"
   ],
   "properties": {
     "disks": {
@@ -175,6 +176,11 @@
       "items": {
         "$ref": "#/definitions/tpm"
       }
+    },
+    "library_version": {
+      "type": "string",
+      "description": "Version of the library that produced the snapshot (\"2.4.0\", \"2.5.0-beta.1\"). Each version publishes its own schema: validate the snapshot with the one attached to that release.",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[0-9A-Za-z.-]+)?$"
     }
   },
   "definitions": {

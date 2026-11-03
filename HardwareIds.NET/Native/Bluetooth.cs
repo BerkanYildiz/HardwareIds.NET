@@ -58,7 +58,7 @@
 
             try
             {
-                var Parameters = new BLUETOOTH_FIND_RADIO_PARAMS { dwSize = (uint) Marshal.SizeOf(typeof(BLUETOOTH_FIND_RADIO_PARAMS)) };
+                var Parameters = new BLUETOOTH_FIND_RADIO_PARAMS { dwSize = (uint) Marshal.SizeOf<BLUETOOTH_FIND_RADIO_PARAMS>() };
                 var Find = BluetoothFindFirstRadio(ref Parameters, out var Radio);
 
                 if (Find == IntPtr.Zero)
@@ -70,7 +70,7 @@
                     {
                         try
                         {
-                            var Info = new BLUETOOTH_RADIO_INFO { dwSize = (uint) Marshal.SizeOf(typeof(BLUETOOTH_RADIO_INFO)) };
+                            var Info = new BLUETOOTH_RADIO_INFO { dwSize = (uint) Marshal.SizeOf<BLUETOOTH_RADIO_INFO>() };
 
                             if (BluetoothGetRadioInfo(Radio, ref Info) == 0)
                             {

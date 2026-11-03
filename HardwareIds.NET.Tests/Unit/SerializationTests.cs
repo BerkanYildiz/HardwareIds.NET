@@ -74,7 +74,7 @@
             using var Document = JsonDocument.Parse(JsonSerializer.Serialize(BuildPopulatedHwid()));
             var Root = Document.RootElement;
 
-            Assert.Equal(ExpectedProperties.Keys.OrderBy(T => T), Root.EnumerateObject().Select(T => T.Name).OrderBy(T => T));
+            Assert.Equal(ExpectedProperties.Keys.Append("library_version").OrderBy(T => T), Root.EnumerateObject().Select(T => T.Name).OrderBy(T => T));
 
             foreach (var Expected in ExpectedProperties)
             {
@@ -116,11 +116,52 @@
                 Assert.DoesNotContain(Name, Json);
 
             //
-            // Only the list properties reach the JSON.
+            // Only the list properties and the library version reach the JSON.
             //
 
             using var Document = JsonDocument.Parse(Json);
-            Assert.All(Document.RootElement.EnumerateObject(), T => Assert.Equal(JsonValueKind.Array, T.Value.ValueKind));
+            Assert.All(Document.RootElement.EnumerateObject(), T => Assert.Equal(T.Name == "library_version" ? JsonValueKind.String : JsonValueKind.Array, T.Value.ValueKind));
+        }
+
+        [Fact]
+        public void Serialize_WritesTheLibraryVersionLast()
+        {
+            //
+            // The version comes after the historical sections, as the fields added in 2.0 do, and holds the package version.
+            //
+
+            using var Document = JsonDocument.Parse(JsonSerializer.Serialize(new Hwid()));
+            var Last = Document.RootElement.EnumerateObject().Last();
+
+            Assert.Equal("library_version", Last.Name);
+            Assert.Equal(HardwareIds.Version, Last.Value.GetString());
+            Assert.Matches(@"^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$", HardwareIds.Version);
+            Assert.Equal(typeof(HardwareIds).Assembly.GetName().Version?.ToString(3), HardwareIds.Version.Split('-')[0]);
+        }
+
+        [Fact]
+        public void Deserialize_KeepsTheLibraryVersionOfTheSnapshot()
+        {
+            var Hwid = JsonSerializer.Deserialize<Hwid>("{\"disks\":[],\"library_version\":\"1.2.0\"}");
+
+            Assert.NotNull(Hwid);
+            Assert.Equal("1.2.0", Hwid.LibraryVersion);
+            Assert.Contains("\"library_version\":\"1.2.0\"", JsonSerializer.Serialize(Hwid));
+        }
+
+        [Fact]
+        public void ToJson_MatchesTheReflectionBasedSerializer()
+        {
+            //
+            // ToJson and HwidJsonContext serve trimmed and Native AOT applications; their output must not drift from JsonSerializer.Serialize.
+            //
+
+            var Hwid = BuildPopulatedHwid();
+
+            Assert.Equal(JsonSerializer.Serialize(Hwid), Hwid.ToJson());
+            Assert.Equal(JsonSerializer.Serialize(Hwid), JsonSerializer.Serialize(Hwid, HwidJsonContext.Default.Hwid));
+            Assert.Equal(JsonSerializer.Serialize(Hwid, new JsonSerializerOptions { WriteIndented = true }), Hwid.ToJson(InIndented: true));
+            Assert.Equal(JsonSerializer.Serialize(new Hwid()), new Hwid().ToJson());
         }
 
         [Fact]

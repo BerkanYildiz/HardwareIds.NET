@@ -2,9 +2,14 @@
 # HardwareIds.NET.Testing --json mode must print the same JSON, byte for byte, in both the compact and the indented
 # forms. Boot time and volatile TPM state are masked because separate processes observe different instants.
 # Every difference is reported as an error annotation; the script exits with 1 when the outputs differ.
+#
+# The same check compares a Native AOT build of HardwareIds.NET.Testing with the JIT one:
+#   parity.ps1 -Snapshot build/aot/HardwareIds.NET.Testing.exe -SnapshotArguments --json -SnapshotName 'Native AOT'
 
 param(
     [Parameter(Mandatory)] [string] $Snapshot,
+    [string[]] $SnapshotArguments = @(),
+    [string] $SnapshotName = 'C++',
     [string] $Configuration = 'Release'
 )
 
@@ -56,7 +61,7 @@ foreach ($Format in @('compact', 'indented'))
 {
     $Extra = if ($Format -eq 'indented') { @('--indented') } else { @() }
     $Net = Get-Json 'dotnet' (@($Testing, '--json') + $Extra)
-    $Cpp = Get-Json $Snapshot $Extra
+    $Cpp = Get-Json $Snapshot ($SnapshotArguments + $Extra)
 
     if ($Net -ceq $Cpp)
     {
@@ -73,9 +78,9 @@ foreach ($Format in @('compact', 'indented'))
     $NetContext = $Net.Substring($Start, [Math]::Min($Net.Length - $Start, 400))
     $CppContext = $Cpp.Substring($Start, [Math]::Min($Cpp.Length - $Start, 400))
 
-    Write-Host "::error title=C++ and .NET snapshots differ ($Format)::The outputs differ at character $Index.%0A.NET: $($NetContext.Replace("`r", '').Replace("`n", ' '))%0AC++:  $($CppContext.Replace("`r", '').Replace("`n", ' '))"
+    Write-Host "::error title=$SnapshotName and .NET snapshots differ ($Format)::The outputs differ at character $Index.%0A.NET: $($NetContext.Replace("`r", '').Replace("`n", ' '))%0A$($SnapshotName): $($CppContext.Replace("`r", '').Replace("`n", ' '))"
     Write-Host ".NET ($($Net.Length) characters): $NetContext"
-    Write-Host "C++  ($($Cpp.Length) characters): $CppContext"
+    Write-Host "$SnapshotName ($($Cpp.Length) characters): $CppContext"
 }
 
 if ($Failed) { exit 1 }

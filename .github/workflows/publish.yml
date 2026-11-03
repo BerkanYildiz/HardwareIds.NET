@@ -1,8 +1,9 @@
 name: Publish
 
-# Runs when a version tag is pushed (v2.0.0, v2.1.0-beta.1, ...): builds and tests the solution, packs the library
-# with the tag as its version, then pushes the package to NuGet.org and GitHub Packages and attaches it to a release,
-# along with a zip of the C++ library and the JSON schema of the snapshots.
+# Runs when a version tag is pushed (v2.0.0, v2.1.0-beta.1, ...): checks that the tag matches the VERSION file and has
+# a dated CHANGELOG.md section, builds and tests the solution, packs the library with that section as its release notes,
+# then pushes the package to NuGet.org and GitHub Packages and attaches it to a release, along with a zip of the C++
+# library and the JSON schema of the snapshots.
 #
 # NuGet.org is reached through Trusted Publishing (OIDC): no API key is stored anywhere. The repository must have a
 # Trusted Publishing policy on nuget.org (profile > Trusted Publishing) with:
@@ -41,31 +42,44 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
-      - name: Derive the version from the tag
+      # Both libraries read their version from the VERSION file, so the tag must match it: a mismatch means the bump was forgotten.
+      - name: Check the tag against the VERSION file
         shell: pwsh
         run: |
           $Version = "${{ github.ref_name }}".TrimStart("v")
+          $Committed = (Get-Content VERSION -Raw).Trim()
+
+          if ($Committed -ne $Version)
+          {
+              Write-Host "::error title=The tag does not match the VERSION file::The tag is v$Version but VERSION holds $Committed. Set VERSION to $Version (and add its CHANGELOG.md section), commit, then tag that commit."
+              exit 1
+          }
+
           "VERSION=$Version" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           Write-Host "Publishing version $Version"
+
+      - name: Extract the release notes from CHANGELOG.md
+        shell: pwsh
+        run: ./.github/scripts/release-notes.ps1 -Version $env:VERSION -Output build/release-notes.md
 
       - name: Restore
         run: dotnet restore
 
       - name: Build
-        run: dotnet build --configuration Release --no-restore -p:Version=${{ env.VERSION }} -p:ContinuousIntegrationBuild=true
+        run: dotnet build --configuration Release --no-restore -warnaserror -p:ContinuousIntegrationBuild=true
 
       - name: Test
         shell: pwsh
         run: ./.github/scripts/test.ps1
 
       - name: Pack
-        run: dotnet pack HardwareIds.NET/HardwareIds.NET.csproj --configuration Release --no-build --output artifacts -p:Version=${{ env.VERSION }} -p:ContinuousIntegrationBuild=true
+        run: dotnet pack HardwareIds.NET/HardwareIds.NET.csproj --configuration Release --no-build --output artifacts -p:ContinuousIntegrationBuild=true "-p:PackageReleaseNotesFile=${{ github.workspace }}/build/release-notes.md"
 
       # The C++ port ships as a zip attached to the release: headers, HardwareIds.dll (C API), the static library, the CMake package and HardwareIdsSnapshot.
       - name: Build the C++ library
         shell: pwsh
         run: |
-          cmake -S HardwareIds.Cpp -B build/cpp -A x64 -DCMAKE_COMPILE_WARNING_AS_ERROR=ON "-DHARDWAREIDS_VERSION=$($env:VERSION.Split('-')[0])"
+          cmake -S HardwareIds.Cpp -B build/cpp -A x64 -DCMAKE_COMPILE_WARNING_AS_ERROR=ON
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           cmake --build build/cpp --config Release
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -82,9 +96,12 @@ jobs:
           Copy-Item LICENSE build/HardwareIds.Cpp
           Compress-Archive -Path build/HardwareIds.Cpp/* -DestinationPath "artifacts/HardwareIds.Cpp-${{ env.VERSION }}-win-x64.zip"
 
+      # Attached twice: under its name, and under a versioned name so that consumers can keep the schema of every release side by side.
       - name: Attach the JSON schema
         shell: pwsh
-        run: Copy-Item hwid.schema.json artifacts
+        run: |
+          Copy-Item hwid.schema.json artifacts
+          Copy-Item hwid.schema.json "artifacts/hwid-$env:VERSION.schema.json"
 
       # The temporary key lives one hour, so it is requested right before the push.
       - name: NuGet login (OIDC to temporary API key)
@@ -116,9 +133,11 @@ jobs:
               if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           }
 
+      # The CHANGELOG.md section comes first, followed by the notes GitHub generates from the commits.
       - name: Create the GitHub release
         uses: softprops/action-gh-release@v3
         with:
           files: artifacts/*
+          body_path: build/release-notes.md
           generate_release_notes: true
           prerelease: ${{ contains(github.ref_name, '-') }}

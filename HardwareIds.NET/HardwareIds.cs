@@ -2,6 +2,7 @@
 {
     using System.Collections.Generic;
     using System.Linq;
+    using System.Reflection;
     using System.Threading;
     using System.Threading.Tasks;
 
@@ -10,6 +11,11 @@
 
     public static partial class HardwareIds
     {
+        /// <summary>
+        /// Gets the version of the library ("2.4.0"), the one every snapshot carries in <see cref="Hwid.LibraryVersion"/>.
+        /// </summary>
+        public static string Version { get; } = ReadVersion();
+
         /// <summary>
         /// Gets the current hardware information of this (local) computer.
         /// </summary>
@@ -222,6 +228,21 @@
         #else
             return GetHwidAsync(InConfig, InCancellationToken).GetAwaiter().GetResult();
         #endif
+        }
+
+        /// <summary>
+        /// Reads the package version of the assembly: its informational version, without the commit SourceLink appends to it ("2.4.0+1a2b3c").
+        /// </summary>
+        private static string ReadVersion()
+        {
+            var Assembly = typeof(HardwareIds).Assembly;
+            var Informational = Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion;
+
+            if (Informational is null || Informational.Length == 0)
+                return Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
+
+            var Build = Informational.IndexOf('+');
+            return Build < 0 ? Informational : Informational.Substring(0, Build);
         }
 
         /// <summary>

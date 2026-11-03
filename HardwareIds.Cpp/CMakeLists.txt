@@ -1,10 +1,28 @@
 cmake_minimum_required(VERSION 3.21)
 
-# The publish workflow sets it from the version tag.
-set(HARDWAREIDS_VERSION "2.3.0" CACHE STRING "Version of the library (major.minor.patch)")
+# The version has a single source, the VERSION file at the root of the repository, shared with the .NET library so that
+# both write the same library_version in their snapshots. HARDWAREIDS_VERSION overrides it ("2.4.0-beta.1" is accepted).
+set(HARDWAREIDS_VERSION "" CACHE STRING "Version of the library, as written in the snapshots (overrides ../VERSION)")
+set(HARDWAREIDS_VERSION_FILE "${CMAKE_CURRENT_SOURCE_DIR}/../VERSION")
+
+if(HARDWAREIDS_VERSION STREQUAL "")
+    if(NOT EXISTS "${HARDWAREIDS_VERSION_FILE}")
+        message(FATAL_ERROR "${HARDWAREIDS_VERSION_FILE} is missing: build from a checkout of the repository, or pass -DHARDWAREIDS_VERSION=<version>.")
+    endif()
+
+    file(READ "${HARDWAREIDS_VERSION_FILE}" HARDWAREIDS_VERSION)
+    string(STRIP "${HARDWAREIDS_VERSION}" HARDWAREIDS_VERSION)
+endif()
+
+# project() only takes the numeric part of the version.
+string(REGEX MATCH "^[0-9]+\\.[0-9]+\\.[0-9]+" HARDWAREIDS_NUMERIC_VERSION "${HARDWAREIDS_VERSION}")
+
+if(NOT HARDWAREIDS_NUMERIC_VERSION)
+    message(FATAL_ERROR "\"${HARDWAREIDS_VERSION}\" is not a major.minor.patch version.")
+endif()
 
 project(HardwareIds
-    VERSION ${HARDWAREIDS_VERSION}
+    VERSION ${HARDWAREIDS_NUMERIC_VERSION}
     DESCRIPTION "Hardware identifiers of the local Windows computer, read straight from the native Windows APIs"
     HOMEPAGE_URL "https://github.com/BerkanYildiz/HardwareIds.NET"
     LANGUAGES C CXX)
@@ -12,6 +30,9 @@ project(HardwareIds
 if(NOT WIN32)
     message(FATAL_ERROR "HardwareIds reads Windows APIs and only builds for Windows.")
 endif()
+
+# A version bump re-runs the configuration.
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS "${HARDWAREIDS_VERSION_FILE}")
 
 option(HARDWAREIDS_BUILD_SHARED "Build HardwareIds.dll, which exposes the C API" ON)
 option(HARDWAREIDS_BUILD_TOOLS "Build the HardwareIdsSnapshot command line tool" ${PROJECT_IS_TOP_LEVEL})
@@ -42,7 +63,7 @@ function(hardwareids_configure_target InTarget)
             $<INSTALL_INTERFACE:include>
         PRIVATE
             ${PROJECT_SOURCE_DIR}/src)
-    target_compile_definitions(${InTarget} PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX _WIN32_WINNT=0x0A00)
+    target_compile_definitions(${InTarget} PRIVATE UNICODE _UNICODE WIN32_LEAN_AND_MEAN NOMINMAX _WIN32_WINNT=0x0A00 HARDWAREIDS_VERSION_STRING="${HARDWAREIDS_VERSION}")
     target_link_libraries(${InTarget} PRIVATE ${HARDWAREIDS_SYSTEM_LIBRARIES})
 
     if(MSVC)

@@ -26,6 +26,19 @@ namespace HardwareIds
         }
     }
 
+    std::wstring Version()
+    {
+        //
+        // CMakeLists.txt defines it from the VERSION file at the root of the repository, shared with the .NET library.
+        //
+
+    #ifndef HARDWAREIDS_VERSION_STRING
+        #error "HARDWAREIDS_VERSION_STRING is not defined: build with CMakeLists.txt, or define it as the version of the library (\"2.4.0\")."
+    #endif
+
+        return L"" HARDWAREIDS_VERSION_STRING;
+    }
+
     Hwid GetHwid(const HardwareIdsConfig& InConfig, std::stop_token InStopToken)
     {
         Hwid Result;

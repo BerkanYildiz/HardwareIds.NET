@@ -1,7 +1,5 @@
 ﻿namespace HardwareIds.NET.Testing
 {
-    using System.Text.Json;
-
     internal static class Program
     {
         /// <summary>
@@ -12,13 +10,13 @@
         {
             //
             // --json [--indented] [--lan]: print a scan as JSON, e.g. to compare it with the C++ library's snapshot.
+            // Hwid.ToJson serializes without reflection, so the tool also runs as a Native AOT build (CI compares both).
             //
 
             if (InLaunchArgs.Contains("--json"))
             {
                 var Config = new HardwareIdsConfig { ScanLocalNetworkDevices = InLaunchArgs.Contains("--lan") };
-                var Options = new JsonSerializerOptions { WriteIndented = InLaunchArgs.Contains("--indented") };
-                Console.Out.Write(JsonSerializer.Serialize(HardwareIds.GetHwid(Config), Options));
+                Console.Out.Write(HardwareIds.GetHwid(Config).ToJson(InIndented: InLaunchArgs.Contains("--indented")));
                 return;
             }
 
@@ -67,7 +65,7 @@
                 Console.WriteLine();
             }
 
-            await File.WriteAllTextAsync("hwid.json", JsonSerializer.Serialize(Hwid, new JsonSerializerOptions { WriteIndented = true }));
+            await File.WriteAllTextAsync("hwid.json", Hwid.ToJson(InIndented: true));
 
             if (!Console.IsInputRedirected)
                 Console.ReadKey(true);

@@ -43,7 +43,7 @@
         public static List<LocalUserInfo> GetLocalUsers()
         {
             var Result = new List<LocalUserInfo>();
-            var Stride = Marshal.SizeOf(typeof(USER_INFO_20));
+            var Stride = Marshal.SizeOf<USER_INFO_20>();
             uint Resume = 0;
 
             while (true)

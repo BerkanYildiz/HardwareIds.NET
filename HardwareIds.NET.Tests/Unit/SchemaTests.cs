@@ -201,8 +201,34 @@ namespace HardwareIds.NET.Tests.Unit
             // The fixture must fill every list, otherwise a component could drift from the schema without failing the tests above.
             //
 
-            Assert.All(Document.RootElement.EnumerateObject(), T => Assert.NotEqual(0, T.Value.GetArrayLength()));
+            Assert.All(Document.RootElement.EnumerateObject().Where(T => T.Value.ValueKind == JsonValueKind.Array), T => Assert.NotEqual(0, T.Value.GetArrayLength()));
             Assert.Equal(Document.RootElement.EnumerateObject().Select(T => T.Name), HwidSchema.Schema.RequiredProperties);
+        }
+
+        [Fact]
+        public void Schema_RequiresTheLibraryVersion()
+        {
+            //
+            // The version tells a consumer which schema describes the snapshot, so it is never optional nor free-form.
+            //
+
+            var Root = JsonNode.Parse(JsonSerializer.Serialize(new Hwid()))!.AsObject();
+            Assert.Equal(HardwareIds.Version, Root["library_version"]!.GetValue<string>());
+
+            foreach (var Version in new[] { "2.4.0", "2.4.0-beta.1", "10.0.12-rc.1.2" })
+            {
+                Root["library_version"] = Version;
+                Assert.Empty(HwidSchema.Validate(Root.ToJsonString()));
+            }
+
+            foreach (var Version in new[] { "", "2.4", "v2.4.0", "2.4.0+1a2b3c", "2.4.0 " })
+            {
+                Root["library_version"] = Version;
+                Assert.NotEmpty(HwidSchema.Validate(Root.ToJsonString()));
+            }
+
+            Root.Remove("library_version");
+            Assert.NotEmpty(HwidSchema.Validate(Root.ToJsonString()));
         }
     }
 }

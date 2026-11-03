@@ -22,6 +22,7 @@
 #include <cstring>
 #include <functional>
 #include <mutex>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <thread>
@@ -1296,7 +1297,24 @@ namespace
         R"("operating_systems":[{"id":0,"name":"Windows 11 Pro","version":"10.0.26200","architecture":"64-bit","registered_user":"Synth","serial_number":"00330-80000-00000-AA000","install_date":"2024-03-07T00:00:00","last_boot_up_time":"2026-09-15T07:01:02.0000001","machine_guid":"3c9a7e15-6b2d-4f80-a1c4-5e7d9b0f2a63","sqm_machine_id":"{D41E7A93-0B5C-4F28-9E61-7A3C2B8F4D05}","hardware_profile_guid":"{a7f3c912-5e04-4b6d-8c21-f09e3d7b6a48}","install_time":"2024-03-07T09:41:27.5","machine_sid":"S-1-5-21-1000000001-2000000002-3000000003"}],)"
         R"("wifis":[{"id":0,"ssid":"Synthetic WiFi","bssid":"02:11:22:33:44:55","Strength":-50,"Channel":6,"Frequency":2437000,"Band":2.4,"Quality":90},{"id":1,"ssid":"","bssid":"02:11:22:33:44:56","Strength":-80,"Channel":36,"Frequency":5180000,"Band":5,"Quality":40}],)"
         R"("routers":[{"id":0,"gateways":[{"mac_address":"02:11:22:33:44:01","ip_address":"192.168.1.1"}],"dns_servers":["1.1.1.1","fe80::1%12"],"dhcp_servers":[],"network_devices":[{"mac_address":null,"ip_address":null}]}],)"
-        R"("network_signatures":[{"id":0,"profile_guid":"{6B1C0E2A-3D4F-4A5B-8C9D-0E1F2A3B4C5D}","name":"Network 2","gateway_address":"02:11:22:33:44:01"}],"tpms":[]})";
+        R"("network_signatures":[{"id":0,"profile_guid":"{6B1C0E2A-3D4F-4A5B-8C9D-0E1F2A3B4C5D}","name":"Network 2","gateway_address":"02:11:22:33:44:01"}],"tpms":[])";
+
+    // The library version, "2.4.0", as an ASCII std::string.
+    std::string LibraryVersion()
+    {
+        std::string Result;
+
+        for (auto Character : HardwareIds::Version())
+            Result += static_cast<char>(Character);
+
+        return Result;
+    }
+
+    // DotNetJson, closed with the library version JsonSerializer.Serialize(Hwid) writes last.
+    std::string ExpectedDotNetJson()
+    {
+        return std::string(DotNetJson) + ",\"library_version\":\"" + LibraryVersion() + "\"}";
+    }
 
     const char* const SectionNames[] =
     {
@@ -1349,7 +1367,18 @@ namespace
 
     TEST(Json_MatchesSystemTextJsonByteForByte)
     {
-        CHECK_EQ(ToJson(BuildSyntheticHwid()), std::string(DotNetJson));
+        CHECK_EQ(ToJson(BuildSyntheticHwid()), ExpectedDotNetJson());
+    }
+
+    TEST(Json_WritesTheLibraryVersion)
+    {
+        //
+        // Every snapshot ends with the version of the library, the one of the VERSION file, even a default-constructed one.
+        //
+
+        CHECK(std::regex_match(LibraryVersion(), std::regex(R"(^\d+\.\d+\.\d+(-[0-9A-Za-z.-]+)?$)")));
+        CHECK(Hwid{}.LibraryVersion == HardwareIds::Version());
+        CHECK(ToJson(Hwid{}).ends_with(",\"library_version\":\"" + LibraryVersion() + "\"}"));
     }
 
     TEST(Json_IndentedOutputUsesCrLfAndTwoSpaces)
@@ -1359,11 +1388,11 @@ namespace
         for (std::size_t I = 0; I < std::size(SectionNames); I++)
             Expected += std::string(I == 0 ? "" : ",") + "\r\n  \"" + SectionNames[I] + "\": []";
 
-        Expected += "\r\n}";
+        Expected += ",\r\n  \"library_version\": \"" + LibraryVersion() + "\"\r\n}";
         CHECK_EQ(ToJson(Hwid{}, JsonFormat::Indented), Expected);
 
         auto Indented = ToJson(BuildSyntheticHwid(), JsonFormat::Indented);
-        CHECK_EQ(Minify(Indented), std::string(DotNetJson));
+        CHECK_EQ(Minify(Indented), ExpectedDotNetJson());
         CHECK(Indented.find("\r\n    {\r\n      \"id\": 0,\r\n      \"interface\": \"SCSI\",") != std::string::npos);
         CHECK(Indented.find("\"dhcp_servers\": [],") != std::string::npos);
         CHECK(Indented.find("\"Band\": 2.4,") != std::string::npos);
@@ -1431,7 +1460,7 @@ namespace
         auto Compact = HardwareIds_GetSnapshotJson(nullptr);
         CHECK(Compact != nullptr);
         CHECK(std::string_view(Compact).starts_with("{\"disks\":["));
-        CHECK(std::string_view(Compact).ends_with("]}"));
+        CHECK(std::string_view(Compact).ends_with(",\"library_version\":\"" + LibraryVersion() + "\"}"));
         HardwareIds_Free(Compact);
 
         HardwareIds_Options Options = {};
